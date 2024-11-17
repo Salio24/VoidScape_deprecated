@@ -1,0 +1,88 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "test.tmx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
+        ":/automap-tiles.tsx": {
+            "scaleInDock": 1
+        },
+        "color.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "test.tmx": {
+            "scale": 0.5,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 1853,
+                "y": 1266
+            }
+        },
+        "test.tmx#color": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        },
+        "test_level.tmx": {
+            "scale": 0.33,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 2965.151515151515,
+                "y": 1193.939393939394
+            }
+        },
+        "untitled.tmx": {
+            "scale": 1.8717968749999998,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 341.3831962936684,
+                "y": 336.0407362577737
+            }
+        },
+        "untitled.xml": {
+            "scale": 1.8717968749999998,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 298.64351600651116,
+                "y": 222.78058349680703
+            }
+        },
+        "untitled.xml#color": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        }
+    },
+    "last.exportedFilePath": "C:/Users/salio/VSCode/VS2022/MyProject/Source/Game/Game/levels",
+    "last.imagePath": "C:/Users/salio/VSCode/VS2022/MyProject/Source/Game/Game/levels/tiles",
+    "lastUsedTilesetExportFilter": "All Files (*)",
+    "map.fixedSize": true,
+    "map.height": 60,
+    "map.lastUsedExportFilter": "CSV files (*.csv)",
+    "map.lastUsedFormat": "tmx",
+    "map.renderOrder": "3",
+    "map.tileHeight": 32,
+    "map.tileWidth": 32,
+    "map.width": 107,
+    "openFiles": [
+        "color.tsx",
+        "test.tmx"
+    ],
+    "project": "Levels.tiled-project",
+    "property.type": "int",
+    "recentFiles": [
+        "color.tsx",
+        "test.tmx",
+        "untitled.xml",
+        "untitled.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.type": 1
+}
