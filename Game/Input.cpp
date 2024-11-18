@@ -87,12 +87,12 @@ void InputManager::Input() {
 		if (state[SDL_SCANCODE_SPACE]) {
 			//app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::SPACE)] = true;
 		}
-		if (state[SDL_SCANCODE_W]) {
-			app().mActor.velocity.y = 100.0f; 
-		}
-		if (state[SDL_SCANCODE_S]) {
-			app().mActor.velocity.y = -100.0f;
-		}
+		//if (state[SDL_SCANCODE_W]) {
+		//	app().mActor.velocity.y = 100.0f; 
+		//}
+		//if (state[SDL_SCANCODE_S]) {
+		//	app().mActor.velocity.y = -100.0f;
+		//}
 		if (state[SDL_SCANCODE_A]) {
 			app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] = true;
 		}

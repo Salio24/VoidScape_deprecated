@@ -49,8 +49,8 @@ public:
 	int GetWindowWidth();
 	int GetWindowHeight();
 
-	int mWindowWidth{ 1600 };
-	int mWindowHeight{ 900 };
+	int mWindowWidth{ 2560 };
+	int mWindowHeight{ 1440 };
 
 	SDL_Window* mWindow{ nullptr };
 	SDL_GLContext mGlContext{ nullptr };
@@ -86,7 +86,7 @@ public:
 	bool tmpbool2{ true };
 
 	bool mQuit{ false };
-	bool mVsync{ true };
+	bool mVsync{ false };
 	bool mDebug{ true };
 
 	float deltaTime{ 0.1f };

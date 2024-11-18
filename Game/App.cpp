@@ -3,7 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include "Sign.hpp"
-
+#include <cmath>
 
 App::App() {
 	StartUp();
@@ -189,11 +189,24 @@ void App::Update() {
 	mBatchRenderer.EndBatch();
 	mBatchRenderer.Flush();
 
-	
+	glm::vec3 temp_color;
 
-	mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, glm::vec3(1.0f, 0.0f, 1.0f), mActor.mModelMatrix);
+	if (!mActor.isGrounded && !mMovementHandler.canWallStick && mMovementHandler.canDoubleJump) {
+		temp_color = glm::vec3(0.0f, 1.0f, 1.0f);
+	}
+	else if (!mActor.isGrounded && !mMovementHandler.canWallStick && !mMovementHandler.canDoubleJump) {
+		temp_color = glm::vec3(0.5f, 0.0f, 1.0f); 
+	}
+	else if (!mActor.isGrounded && mMovementHandler.canWallStick) {
+		temp_color = glm::vec3(1.0f, 1.0f, 0.0f);
+	}
+	else {
+		temp_color = glm::vec3(1.0f, 0.0f, 1.0f);
+	}
 
-	//std::cout << mActor.mPosition.x << std::endl;
+	mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, temp_color, mActor.mModelMatrix);
+
+	//std::cout << "Km/h :" << std::abs((mActor.velocity.x / 54.0f) * 3.6f) << std::endl;
 	//static std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> tmp1;
 	//if (int(mActor.mPosition.x) >= 1000.0f && tmpbool1 == true) {
 	//	tmp1 = std::chrono::high_resolution_clock::now();

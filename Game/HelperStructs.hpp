@@ -1,7 +1,7 @@
 #pragma once
 #include <glm/glm.hpp>
 
-struct Vertex {
+struct Box {
 	glm::vec2 Position;
 	glm::vec3 Color;
 	glm::vec2 Size;

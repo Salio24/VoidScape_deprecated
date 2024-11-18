@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "test.tmx",
+    "activeFile": "test_level.tmx",
     "expandedProjectPaths": [
         "."
     ],
@@ -23,8 +23,8 @@
             "scale": 0.5,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1853,
-                "y": 1266
+                "x": 1679,
+                "y": 1076
             }
         },
         "test.tmx#color": {
@@ -32,11 +32,11 @@
             "scaleInDock": 1
         },
         "test_level.tmx": {
-            "scale": 0.33,
+            "scale": 0.5,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 2965.151515151515,
-                "y": 1193.939393939394
+                "x": 5227,
+                "y": 1928
             }
         },
         "untitled.tmx": {
@@ -73,13 +73,15 @@
     "map.width": 107,
     "openFiles": [
         "color.tsx",
-        "test.tmx"
+        "test.tmx",
+        "test_level.tmx"
     ],
     "project": "Levels.tiled-project",
     "property.type": "int",
     "recentFiles": [
         "color.tsx",
         "test.tmx",
+        "test_level.tmx",
         "untitled.xml",
         "untitled.tmx"
     ],

@@ -17,31 +17,45 @@ class MovementHandler {
 
 	void WallJump();
 
-	void Jump(float& deltaTime, float& foo);
+	void Jump(float& deltaTime, const float& jumpSpeed);
 
 	bool debugMove{ false };
 
 	const int jumpBufferTime{ 100 };
 	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> jumpBufferTimer;
 
-	const int jumpTime{ 400 };
+	const int wallJumpBufferTime{ 100 };
+	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> wallJumpBufferTimer;
+
+	const int jumpTime{ 200 };
 	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> jumpTimer;
+
+	const int wallJumpTime{ 200 };
+	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> wallJumpTimer;
+
+	const int doubleJumpTime{ 150 };
+	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> doubleJumpTimer;
 
 	bool isJumping{ false };
 
-	float foo;
+	bool isWallJumping{ false }; 
 
-	bool gstate;
+	bool isDoubleJumping{ false };
+
+
 
 public:
 	MovementHandler();
 
 	~MovementHandler();
 
+	bool canDoubleJump{ false };
+
+	bool canWallStick{ false };
+
 	void Update(float& deltaTime);
 
 	bool spacebarOneShot{ true };
-
 
 	bool KeyboadStates[static_cast<int>(MovementState::MOVE_DOWN)] = { false };
 

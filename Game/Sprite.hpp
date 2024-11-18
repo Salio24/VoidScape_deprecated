@@ -10,9 +10,7 @@ struct Sprite {
 
 	~Sprite();
 
-	//Vertex vertex[4];
-
-	Vertex vertexData;
+	Box vertexData;
 
 	std::vector<GLfloat> mTexturePosition;
 };
