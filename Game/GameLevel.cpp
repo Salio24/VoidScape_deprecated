@@ -60,26 +60,38 @@ void GameLevel::LoadLevel(const std::string file) {
 void GameLevel::BuildLevel() {
 	for (int i = 0; i < mLevelData.size(); ++i) {
 		for (int j = 0; j < mLevelData[i].size(); ++j) {
-			if (mLevelData[i][j] == "2") {
-				GameObject obj;
-				obj.mSprite.vertexData.Position = glm::vec2(j * mBlockSize, i * mBlockSize);
-				obj.mSprite.vertexData.Size = glm::vec2(mBlockSize, mBlockSize);
-				obj.mSprite.vertexData.Color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-				this->mBlocks.push_back(obj);
+			//if (mLevelData[i][j] == "2") {
+			//	GameObject obj;
+			//	obj.mSprite.vertexData.Position = glm::vec2(j * mBlockSize, i * mBlockSize);
+			//	obj.mSprite.vertexData.Size = glm::vec2(mBlockSize, mBlockSize);
+			//	obj.mSprite.vertexData.Color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+			//	this->mBlocks.push_back(obj);
+			//}
+			//if (mLevelData[i][j] == "1") {
+			//	GameObject obj;
+			//	obj.mSprite.vertexData.Position = glm::vec2(j * mBlockSize, i * mBlockSize);
+			//	obj.mSprite.vertexData.Size = glm::vec2(mBlockSize, mBlockSize);
+			//	obj.mSprite.vertexData.Color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+			//	this->mBlocks.push_back(obj);
+			//}
+			//if (mLevelData[i][j] == "0") {
+			//	GameObject obj;
+			//	obj.mSprite.vertexData.Position = glm::vec2(j * mBlockSize, i * mBlockSize);
+			//	obj.mSprite.vertexData.Size = glm::vec2(mBlockSize, mBlockSize);
+			//	obj.mSprite.vertexData.Color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+			//	this->mBlocks.push_back(obj);
+			//}
+			if (i < mLevelData.size() && j < mLevelData[i].size()) {
+				if (mLevelData[i][j] != "-1") {
+					GameObject obj;
+					obj.mSprite.vertexData.Position = glm::vec2(j * mBlockSize, i * mBlockSize);
+					obj.mSprite.vertexData.Size = glm::vec2(mBlockSize, mBlockSize);
+					obj.mSprite.vertexData.TextureIndex = std::stoi(mLevelData[i][j]) + 1;
+					this->mBlocks.push_back(obj);
+				}
 			}
-			if (mLevelData[i][j] == "1") {
-				GameObject obj;
-				obj.mSprite.vertexData.Position = glm::vec2(j * mBlockSize, i * mBlockSize);
-				obj.mSprite.vertexData.Size = glm::vec2(mBlockSize, mBlockSize);
-				obj.mSprite.vertexData.Color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-				this->mBlocks.push_back(obj);
-			}
-			if (mLevelData[i][j] == "0") {
-				GameObject obj;
-				obj.mSprite.vertexData.Position = glm::vec2(j * mBlockSize, i * mBlockSize);
-				obj.mSprite.vertexData.Size = glm::vec2(mBlockSize, mBlockSize);
-				obj.mSprite.vertexData.Color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
-				this->mBlocks.push_back(obj);
+			else {
+				std::cerr << "Out of bounds: i = " << i << ", j = " << j << std::endl;
 			}
 		}
 	}

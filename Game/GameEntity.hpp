@@ -18,8 +18,6 @@ public:
 
 	bool isGrounded{ false };
 
-	bool isWallMounted{ false };
-
 	bool isWallMountable{ false };
 	bool isWallMountableL{ false };
 	bool isWallMountableR{ false };

@@ -22,6 +22,7 @@ public:
 	void SetProjectionMatrix();
 
 	void SetMousePosstition(double mouseX, double mouseY);
+	glm::vec2 mCameraVelocity{ 0.0f, 0.0f };
 
 	glm::vec2 GetMousePossition() const;
 	glm::vec3 mEye;
@@ -38,7 +39,6 @@ private:
 	glm::vec3 mUpVector;
 
 	glm::vec2 mOldMousePosition;
-	glm::vec2 mCameraVelocity{ 0.0f, 0.0f };
 
 	float mCameraVelocityTimerBuffer{ 0.0f };
 	float mCameraVelocityTimeBuffer{ 0.5f };

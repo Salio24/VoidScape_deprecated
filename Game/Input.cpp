@@ -34,30 +34,34 @@ void InputManager::Input() {
 			case SDL_SCANCODE_SPACE:
 				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::SPACE)] = false;
 				app().mMovementHandler.spacebarOneShot = true;
-				//app().mActor.isWallMountableL = false;
-				//app().mActor.isWallMountableR = false;
-				//if (app().mActor.isWallMounted) {
-				//	app().mActor.velocity.y = 500.0f;
-				//	app().mActor.velocity.x = -100.0f;
-				//	for (int i = 0; i < 50; i++) {
-				//		//app().mActor.velocity.x += 10.0f;
-				//		//std::cout << "pass" << std::endl;
-				//}
-
-				//}
-				app().mActor.isWallMounted = false;
+				break;
 			case SDL_SCANCODE_A:
 				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] = false;
+				break;
 			case SDL_SCANCODE_D:
 				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)] = false;
+				break;
+			case SDL_SCANCODE_LSHIFT: 
+				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::DUCK)] = false;
+				app().mMovementHandler.duckOneShot = true;
+				break;
+			case SDL_SCANCODE_W:
+				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_UP)] = false;
+				break;
+			case SDL_SCANCODE_S:
+				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_DOWN)] = false;
+				break;
 
+			default:
 				break;
 			}
 		}
 		if (e.type == SDL_EVENT_KEY_DOWN) {
 			switch (e.key.scancode) {
 			case SDL_SCANCODE_SPACE:
-				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::SPACE)] = true;
+				//app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::SPACE)] = true;
+				break;
+			default:
 				break;
 			}
 		}
@@ -85,14 +89,17 @@ void InputManager::Input() {
 		//	gMesh1.mTranslate.m_uAngle = +1.0f;
 		//}
 		if (state[SDL_SCANCODE_SPACE]) {
-			//app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::SPACE)] = true;
+			app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::SPACE)] = true;
 		}
-		//if (state[SDL_SCANCODE_W]) {
-		//	app().mActor.velocity.y = 100.0f; 
-		//}
-		//if (state[SDL_SCANCODE_S]) {
-		//	app().mActor.velocity.y = -100.0f;
-		//}
+		if (state[SDL_SCANCODE_W]) {
+			app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_UP)] = true;
+		}
+		if (state[SDL_SCANCODE_S]) {
+			app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_DOWN)] = true;
+		}
+		if (state[SDL_SCANCODE_LSHIFT]) {
+			app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::DUCK)] = true;
+		}
 		if (state[SDL_SCANCODE_A]) {
 			app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] = true;
 		}

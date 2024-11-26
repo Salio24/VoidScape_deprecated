@@ -3,28 +3,105 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "test_level.tmx",
+    "activeFile": "GameLevels/Proto_Level.tmx",
     "expandedProjectPaths": [
+        "tilesets/adve",
+        "GameLevels",
+        "tilesets",
         "."
     ],
     "fileStates": {
         "": {
             "scaleInDock": 1
         },
+        "123.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 0.25
+        },
         ":/automap-tiles.tsx": {
             "scaleInDock": 1
+        },
+        "GameLevels/Proto_Level.tmx": {
+            "scale": 3,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 280.8333333333333,
+                "y": 397.16666666666663
+            }
+        },
+        "GameLevels/logical_tiles8p.tsx": {
+            "scaleInDock": 5.5,
+            "scaleInEditor": 1
+        },
+        "GameLevels/map.tmx": {
+            "scale": 4.2749999999999995,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 194.7368421052632,
+                "y": 125.49707602339186
+            }
+        },
+        "GameLevels/tiles.tsx": {
+            "scaleInDock": 4,
+            "scaleInEditor": 3
+        },
+        "Level1.tmx": {
+            "scale": 0.03125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 22320,
+                "y": 16832
+            }
+        },
+        "Mossy - BackgroundDecoration.tsx": {
+            "scaleInDock": 0.25,
+            "scaleInEditor": 0.33
+        },
+        "Mossy - Decorations&Hazards.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 0.33
+        },
+        "Mossy - FloatingPlatforms.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 0.5
+        },
+        "Mossy - Hanging Plants.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 0.33
+        },
+        "Mossy - MossyHills.tsx": {
+            "scaleInDock": 0.33,
+            "scaleInEditor": 0.5
+        },
+        "Mossy - TileSet - edit.tsx": {
+            "scaleInDock": 0.25,
+            "scaleInEditor": 0.33
+        },
+        "Mossy - TileSet.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 0.125,
+            "scaleInEditor": 0.33
+        },
+        "Platformer Asset All A.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 5.5
         },
         "color.tsx": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
+        "logical_tiles.tsx": {
+            "scaleInDock": 0.25,
+            "scaleInEditor": 0.33
+        },
         "test.tmx": {
-            "scale": 0.5,
+            "scale": 0.33,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 1679,
-                "y": 1076
+                "x": 2701.5151515151515,
+                "y": 1456.060606060606
             }
         },
         "test.tmx#color": {
@@ -35,9 +112,20 @@
             "scale": 0.5,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 5227,
-                "y": 1928
+                "x": 1909,
+                "y": 1419
             }
+        },
+        "tilesets/adve/map.tmx": {
+            "scale": 3.3114285714285714,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 558.2182916307162,
+                "y": 317.3856773080241
+            }
+        },
+        "tilesets/adve/tiles.tsx": {
+            "scaleInDock": 1
         },
         "untitled.tmx": {
             "scale": 1.8717968749999998,
@@ -60,7 +148,7 @@
             "scaleInDock": 1
         }
     },
-    "last.exportedFilePath": "C:/Users/salio/VSCode/VS2022/MyProject/Source/Game/Game/levels",
+    "last.exportedFilePath": "C:/Users/salio/VSCode/VS2022/MyProject/Source/Game/Game/levels/GameLevels",
     "last.imagePath": "C:/Users/salio/VSCode/VS2022/MyProject/Source/Game/Game/levels/tiles",
     "lastUsedTilesetExportFilter": "All Files (*)",
     "map.fixedSize": true,
@@ -68,23 +156,37 @@
     "map.lastUsedExportFilter": "CSV files (*.csv)",
     "map.lastUsedFormat": "tmx",
     "map.renderOrder": "3",
-    "map.tileHeight": 32,
-    "map.tileWidth": 32,
-    "map.width": 107,
+    "map.tileHeight": 8,
+    "map.tileWidth": 8,
+    "map.width": 500,
     "openFiles": [
-        "color.tsx",
         "test.tmx",
-        "test_level.tmx"
+        "test_level.tmx",
+        "GameLevels/tiles.tsx",
+        "GameLevels/logical_tiles8p.tsx",
+        "GameLevels/map.tmx",
+        "GameLevels/Proto_Level.tmx"
     ],
     "project": "Levels.tiled-project",
     "property.type": "int",
     "recentFiles": [
-        "color.tsx",
         "test.tmx",
         "test_level.tmx",
-        "untitled.xml",
-        "untitled.tmx"
+        "GameLevels/tiles.tsx",
+        "GameLevels/logical_tiles8p.tsx",
+        "GameLevels/map.tmx",
+        "GameLevels/Proto_Level.tmx",
+        "tilesets/adve/map.tmx",
+        "color.tsx",
+        "Level1.tmx",
+        "Mossy - TileSet.tsx",
+        "Mossy - MossyHills.tsx",
+        "Mossy - Hanging Plants.tsx"
     ],
     "tileset.lastUsedFormat": "tsx",
-    "tileset.type": 1
+    "tileset.tileSize": {
+        "height": 8,
+        "width": 8
+    },
+    "tileset.type": 0
 }

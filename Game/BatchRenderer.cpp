@@ -1,9 +1,6 @@
 #include "BatchRenderer.hpp"
 #include "App.hpp"
-
-static const size_t MaxQuadCount = 1000;
-static const size_t MaxVertexCount = MaxQuadCount * 4;
-static const size_t MaxIndexCount = MaxQuadCount * 6;
+#include <cstddef>
 
 // Basically static memory allocation and value init for batch rendering
 
@@ -21,13 +18,14 @@ App& BatchRenderer::app()  {
 	}
 	return *app_;
 }
-void BatchRenderer::StartUp() {
+void BatchRenderer::StartUp(const GLuint& PipelineProgram) {
 	if (QuadBuffer != nullptr) {
 		std::cout << "BatchRenderer has been initialized twice. ERROR!" << std::endl;
 		std::exit(EXIT_FAILURE);
 	}
 
 	QuadBuffer = new Box[MaxVertexCount];
+
 
 	glCreateVertexArrays(1, &mVAO);
 	glBindVertexArray(mVAO);
@@ -40,7 +38,13 @@ void BatchRenderer::StartUp() {
 	glVertexAttribPointer(0, 2, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, Position));
 
 	glEnableVertexArrayAttrib(mVAO, 1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, Color));
+	glVertexAttribPointer(1, 4, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, Color));
+
+	glEnableVertexArrayAttrib(mVAO, 2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, TexturePosition));
+
+	glEnableVertexArrayAttrib(mVAO, 3);
+	glVertexAttribPointer(3, 1, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, TextureIndex));
 
 	uint32_t indices[MaxIndexCount];
 	uint32_t offset = 0;
@@ -58,6 +62,20 @@ void BatchRenderer::StartUp() {
 	glCreateBuffers(1, &mIBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	//glCreateTextures(GL_TEXTURE_2D, 1, &WhiteTexture);
+	//glBindTexture(GL_TEXTURE_2D, WhiteTexture);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	//uint32_t color = 0xffffffff;
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &color);
+
+	TextureSlots[0] = WhiteTexture;
+	for (size_t i = 1; i < MaxTextureSlots; i++) {
+		TextureSlots[i] = 0;
+	}
 }
 
 void BatchRenderer::ShutDown() {
@@ -65,11 +83,16 @@ void BatchRenderer::ShutDown() {
 	glDeleteBuffers(1, &mVBO);
 	glDeleteBuffers(1, &mIBO);
 
+	glDeleteTextures(1, &WhiteTexture);
+
 	delete[] QuadBuffer;
 }
 
-void BatchRenderer::BeginBatch() {
+void BatchRenderer::BeginBatch(const glm::mat4& ProjectionMatrix, const glm::mat4& test) {
 	QuadBufferPtr = QuadBuffer;
+	mod = test;
+	CurrentProjectionMatrix = ProjectionMatrix;
+	glGetIntegerv(GL_CURRENT_PROGRAM, (GLint*)&CurrentPipeline);
 }
 
 void BatchRenderer::EndBatch() {
@@ -78,52 +101,116 @@ void BatchRenderer::EndBatch() {
 	glBufferSubData(GL_ARRAY_BUFFER, 0, size, QuadBuffer);
 }
 
-void BatchRenderer::DrawInBatch(const glm::vec2& position, glm::vec2 size, const glm::vec3& color) {
+void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color) {
 	if (IndexCount >= MaxIndexCount) {
 		EndBatch();
 		Flush();
-		BeginBatch();
+		BeginBatch(CurrentProjectionMatrix);
 	}
 
 	QuadBufferPtr->Position = {position.x, position.y};
 	QuadBufferPtr->Color = color;
+	QuadBufferPtr->TexturePosition = {0.0f, 0.0f};
+	QuadBufferPtr->TextureIndex = 0;
 	QuadBufferPtr++;
 
 	QuadBufferPtr->Position = { position.x + size.x, position.y };
 	QuadBufferPtr->Color = color;
+	QuadBufferPtr->TexturePosition = { 1.0f, 0.0f };
+	QuadBufferPtr->TextureIndex = 0;
 	QuadBufferPtr++;
 
 	QuadBufferPtr->Position = { position.x + size.x, position.y + size.y};
 	QuadBufferPtr->Color = color;
+	QuadBufferPtr->TexturePosition = { 1.0f, 1.0f };
+	QuadBufferPtr->TextureIndex = 0;
 	QuadBufferPtr++;
 
 	QuadBufferPtr->Position = { position.x, position.y + size.y };
 	QuadBufferPtr->Color = color;
+	QuadBufferPtr->TexturePosition = { 0.0f, 1.0f };
+	QuadBufferPtr->TextureIndex = 0;
 	QuadBufferPtr++;
 
 	IndexCount += 6;
 }
 
-void BatchRenderer::DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::vec3& color, const glm::mat4& ModelMatrix) {
-	BeginBatch();
+void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size, uint32_t textureID) {
+	if (IndexCount >= MaxIndexCount || TextureSlotIndex > 1024) {
+		EndBatch();
+		Flush();
+		BeginBatch(CurrentProjectionMatrix);
+	}
+
+	constexpr glm::vec4 color = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	//int CurrentTextureIndex = 0;
+	//for (uint32_t i = 1; i < TextureSlotIndex; i++) {
+	//	if (TextureSlots[i] == textureID) {
+	//		CurrentTextureIndex = i;
+	//		break;
+	//	}
+	//}
+
+	//if (CurrentTextureIndex == 0.0f) {
+	//	CurrentTextureIndex = (float)TextureSlotIndex;
+	//	TextureSlots[TextureSlotIndex] = textureID;
+	//	TextureSlotIndex++;
+	//}
+
+	QuadBufferPtr->Position = { position.x, position.y };
+	QuadBufferPtr->Color = color;
+	QuadBufferPtr->TexturePosition = { 0.0f, 0.0f };
+	QuadBufferPtr->TextureIndex = textureID;
+	QuadBufferPtr++;
+
+	QuadBufferPtr->Position = { position.x + size.x, position.y };
+	QuadBufferPtr->Color = color;
+	QuadBufferPtr->TexturePosition = { 1.0f, 0.0f };
+	QuadBufferPtr->TextureIndex = textureID;
+	QuadBufferPtr++;
+
+	QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
+	QuadBufferPtr->Color = color;
+	QuadBufferPtr->TexturePosition = { 1.0f, 1.0f };
+	QuadBufferPtr->TextureIndex = textureID;
+	QuadBufferPtr++;
+
+	QuadBufferPtr->Position = { position.x, position.y + size.y };
+	QuadBufferPtr->Color = color;
+	QuadBufferPtr->TexturePosition = { 0.0f, 1.0f };
+	QuadBufferPtr->TextureIndex = textureID;
+	QuadBufferPtr++;
+
+	IndexCount += 6;
+}
+
+
+void BatchRenderer::DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::vec4& color, const glm::mat4& ProjectionMatrix, const glm::mat4& ModelMatrix) {
+	BeginBatch(ProjectionMatrix);
 	DrawInBatch(position, size, color);
 	EndBatch();
 	Flush(ModelMatrix);
 }
 
 void BatchRenderer::Flush(const glm::mat4 ModelMatrix) {
-	//glUseProgram(app().mGraphicsPipelineShaderProgram);
+	//glBindTexture(GL_TEXTURE_2D_ARRAY, app().textureArray);
 
-	UniformVariableLinkageAndPopulatingWithMatrix("uModelMatrix", ModelMatrix);
-	UniformVariableLinkageAndPopulatingWithMatrix("uProjectionMatrix", app().mCamera.GetProjectionMatrix());
+	UniformVariableLinkageAndPopulatingWithMatrix("uModelMatrix", ModelMatrix, app().mGraphicsPipelineShaderProgram);
+	UniformVariableLinkageAndPopulatingWithMatrix("uProjectionMatrix", app().mCamera.GetProjectionMatrix(), app().mGraphicsPipelineShaderProgram);
 	glBindVertexArray(mVAO);
 	glDrawElements(GL_TRIANGLES, IndexCount, GL_UNSIGNED_INT, nullptr);
 	IndexCount = 0;
-	//glUseProgram(0);
+
+	TextureSlotIndex = 1;
+
+	for (size_t i = 1; i < MaxTextureSlots; i++) {
+		TextureSlots[i] = 0;
+	}
 }
 
-void BatchRenderer::UniformVariableLinkageAndPopulatingWithMatrix(const GLchar* uniformLocation, glm::mat4 matrix) {
-	GLint MatrixLocation = glGetUniformLocation(app().mGraphicsPipelineShaderProgram, uniformLocation);
+void BatchRenderer::UniformVariableLinkageAndPopulatingWithMatrix(const GLchar* uniformLocation, glm::mat4 matrix, const GLuint& PipelineProgram) {
+	GLint MatrixLocation = glGetUniformLocation(PipelineProgram, uniformLocation);
 	if (MatrixLocation >= 0) {
 		glUniformMatrix4fv(MatrixLocation, 1, GL_FALSE, &matrix[0][0]);
 	}

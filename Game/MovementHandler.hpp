@@ -2,6 +2,7 @@
 #include <glm/glm.hpp>
 #include "HelperStructs.hpp"
 #include <chrono>
+#include "Sign.hpp"
 
 class App;
 
@@ -19,13 +20,17 @@ class MovementHandler {
 
 	void Jump(float& deltaTime, const float& jumpSpeed);
 
+	void Slam(float& deltaTime, const float& slamSpeed, const float& speedLimit);
+
 	bool debugMove{ false };
+
+	float frictionModifier{ 7.2f };
 
 	const int jumpBufferTime{ 100 };
 	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> jumpBufferTimer;
 
-	const int wallJumpBufferTime{ 100 };
-	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> wallJumpBufferTimer;
+	//const int wallJumpBufferTime{ 100 };
+	//std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> wallJumpBufferTimer;
 
 	const int jumpTime{ 200 };
 	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> jumpTimer;
@@ -42,6 +47,12 @@ class MovementHandler {
 
 	bool isDoubleJumping{ false };
 
+	bool isSlamming{ false };
+
+
+	bool slideOneShot{ true };
+
+	int slideDirection{ 0 };
 
 
 public:
@@ -51,13 +62,16 @@ public:
 
 	bool canDoubleJump{ false };
 
+	bool isSliding{ false };
 	bool canWallStick{ false };
 
 	void Update(float& deltaTime);
 
 	bool spacebarOneShot{ true };
 
-	bool KeyboadStates[static_cast<int>(MovementState::MOVE_DOWN)] = { false };
+	bool duckOneShot{ true };
+
+	bool KeyboadStates[static_cast<int>(MovementState::END)] = { false };
 
 	bool LeftWallHug{ false };
 	bool RightWallHug{ false };

@@ -19,6 +19,7 @@
 #include <vector>
 #include <chrono>
 #include <SDL3/SDL_hints.h>
+#include "Texture.hpp"
 
 class App {
 	App();
@@ -49,8 +50,8 @@ public:
 	int GetWindowWidth();
 	int GetWindowHeight();
 
-	int mWindowWidth{ 2560 };
-	int mWindowHeight{ 1440 };
+	int mWindowWidth{ 1920 };
+	int mWindowHeight{ 1080 };
 
 	SDL_Window* mWindow{ nullptr };
 	SDL_GLContext mGlContext{ nullptr };
@@ -70,6 +71,10 @@ public:
 	MovementHandler mMovementHandler;
 
 	GameLevel mLevel;
+
+	GLuint textureArray;
+
+	TextureHandler mTextureHandler;
 
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> tp1;
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> tp2;
@@ -93,5 +98,3 @@ public:
 	float deltaTimeRaw;
 	float deltaTimeBuffer{ 0.0f };
 };
-
-//TODO: make app a singleton class and deal with IO access and start implementing a main loop in app class
