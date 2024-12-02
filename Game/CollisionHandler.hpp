@@ -15,4 +15,4 @@ bool DynamicRectVsRect(const Box& dynamicBox, const float deltaTime, const Box& 
 
 bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box& staticBox, glm::vec2& dynamicBoxVelocity, GameEntity& actor, glm::vec2& averagedNormal, bool& NormalGroundCheck);
 
-void CollisionUpdate(const std::vector<GameObject>& blocks, GameEntity& actor, bool& LeftWallHug, bool& RightWallHug, const float& deltaTime);
+void CollisionUpdate(const std::vector<GameObject>& blocks, GameEntity& actor, bool& LeftWallHug, bool& RightWallHug, const float& deltaTime, bool& isGrounded);

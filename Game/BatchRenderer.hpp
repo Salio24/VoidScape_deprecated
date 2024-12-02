@@ -27,10 +27,11 @@ struct BatchRenderer {
 	void Flush(const glm::mat4 ModelMatrix = glm::mat4(1.0f));
 
 	void DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::vec4& color, const glm::mat4& ProjectionMatrix, const glm::mat4& ModelMatrix = glm::mat4(1.0f));
+	void DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::mat4& ProjectionMatrix, uint32_t textureID, const glm::vec2& textureSize = glm::vec2(1.0f, 1.0f), const glm::vec2& texturePosition = glm::vec2(0.0f, 0.0f), const glm::mat4& ModelMatrix = glm::mat4(1.0f), const bool& drawFliped = false);
 
 	void DrawInBatch(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
 
-	void DrawInBatch(const glm::vec2& position, const glm::vec2& size, uint32_t textureID);
+	void DrawInBatch(const glm::vec2& position, const glm::vec2& size, uint32_t textureID, const glm::vec2& textureSize = glm::vec2(1.0f, 1.0f), const glm::vec2& texturePosition = glm::vec2(0.0f, 0.0f), const bool& drawFliped = false);
 
 	static const size_t MaxQuadCount{ 1000 };
 	static const size_t MaxVertexCount{ MaxQuadCount * 4 };

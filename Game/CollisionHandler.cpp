@@ -134,7 +134,7 @@ bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box&
 	return false;
 }
 
-void CollisionUpdate(const std::vector<GameObject>& blocks, GameEntity& actor, bool& LeftWallHug, bool& RightWallHug, const float& deltaTime) {
+void CollisionUpdate(const std::vector<GameObject>& blocks, GameEntity& actor, bool& LeftWallHug, bool& RightWallHug, const float& deltaTime, bool& isGrounded) {
 	static glm::vec2 averagedNormal(0.0f, 0.0f);
 	static bool NormalGroundCheck = false;
 	static bool BottomWallHug = false;
@@ -154,19 +154,20 @@ void CollisionUpdate(const std::vector<GameObject>& blocks, GameEntity& actor, b
 	RightWallHug = false;
 	BottomWallHug = false;
 	for (int i = 0; i < blocks.size(); i++) {
-		if (blocks[i].mSprite.vertexData.Position.x > A.x && blocks[i].mSprite.vertexData.Position.x < B.x && blocks[i].mSprite.vertexData.Position.y > A.y && blocks[i].mSprite.vertexData.Position.y < B.y) {
+		if (blocks[i].mSprite.vertexData.Position.x > A.x && blocks[i].mSprite.vertexData.Position.x < B.x && blocks[i].mSprite.vertexData.Position.y > A.y && blocks[i].mSprite.vertexData.Position.y < B.y && blocks[i].isCollidable == true) {
 			if (DynamicRectVsRect(actor.mSprite.vertexData, deltaTime, blocks[i].mSprite.vertexData, actor.velocity, contactPoint, contactNormal, contactTime, actor.mPosition)) {
 				colidedBlocks.push_back({ i, contactTime });
 			}
-			if (blocks[i].mSprite.vertexData.Position.x == actor.mPosition.x + actor.mSprite.vertexData.Size.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !actor.isGrounded) {
+			if (blocks[i].mSprite.vertexData.Position.x == actor.mPosition.x + actor.mSprite.vertexData.Size.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !isGrounded) {
 				RightWallHug = RectVsRect(glm::vec2(actor.mPosition.x + actor.mSprite.vertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
 			}
-			if (blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x == actor.mPosition.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !actor.isGrounded) {
+			if (blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x == actor.mPosition.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !isGrounded) {
 				LeftWallHug = RectVsRect(glm::vec2(actor.mPosition.x - actor.mSprite.vertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
 			} 
 			if (blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y == actor.mPosition.y && actor.mPosition.x < blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x && actor.mPosition.x + actor.mSprite.vertexData.Size.x > blocks[i].mSprite.vertexData.Position.x) {
 				BottomWallHug = RectVsRect(glm::vec2(actor.mPosition.x, actor.mPosition.y - actor.mSprite.vertexData.Size.y / 2), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
 			}
+
 		}
 	}
 	std::sort(colidedBlocks.begin(), colidedBlocks.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
@@ -178,10 +179,10 @@ void CollisionUpdate(const std::vector<GameObject>& blocks, GameEntity& actor, b
 	}
 
 	if (BottomWallHug && NormalGroundCheck && actor.velocity.y == 0.0f) {
-		actor.isGrounded = true;
+		isGrounded = true;
 	}
 	else {
-		actor.isGrounded = false;
+		isGrounded = false;
 	}
 
 

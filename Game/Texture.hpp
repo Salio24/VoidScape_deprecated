@@ -1,3 +1,4 @@
+#pragma once
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_image.h>
 #include <SDL3/SDL_surface.h>
@@ -14,15 +15,14 @@ public:
 
 	~TextureHandler();
 
-
 	SDL_Surface* LoadSurface(const char* filepath);
 
 	void InitTextureArray(const GLenum& internalformat, const GLsizei& width, const GLsizei& height, const GLsizei& depth);
 
-	void LoadTexture(SDL_Surface* surface, const GLenum& internalformat, const int& layer);
+	void LoadTexture(SDL_Surface* surface, const GLenum& internalformat, const int& layer, const int& slot);
 
 	SDL_Surface* FlipSurfaceVertically(SDL_Surface* surface);
-	std::vector<SDL_Surface*> CutTileset(SDL_Surface* tileset, int tileWidth, int tileHeight);
+	std::vector<SDL_Surface*> CutTileset(SDL_Surface* tileset, const int& tileWidth, const int& tileHeight);
 
 	int TextureSlotsTaken = 0;
 

@@ -5,12 +5,13 @@
 #include "Sign.hpp"
 #include <cmath>
 #include <SDL3/SDL_image.h>
+#include <SDL3/SDL_mixer.h>
+#include <glm/gtx/norm.hpp>
+#include <random>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtx/exterior_product.hpp> 
 
-GLuint textureID1{1};
-GLuint textureID2{2};
-
-
-App::App() {
+App::App() : mAnimationHandler(mTextureHandler) {
 	StartUp();
 }
 
@@ -19,15 +20,22 @@ App::~App() {
 }
 
 void App::StartUp() {
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		std::cout << "SDL3 could not initialize video subsystem" << std::endl;
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+		std::cout << "SDL3 could not initialize video subsystem or audio subsystem" << std::endl;
 		exit(1);
 	}
 
 	if (IMG_Init(IMG_INIT_PNG) == 0) {
-		std::cerr << "SDL3_Image could not be initialized" << std::endl;
+		std::cerr << "SDL3_image could not be initialized" << std::endl;
 		exit(1);
 	}
+	if (Mix_OpenAudio(0, NULL) < 0)
+	{
+		std::cerr << "SDL3_mixer could not be initialized" << std::endl;
+		exit(1);
+	}
+
+
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
 	if (mDebug) {
@@ -79,92 +87,39 @@ void App::PostStartUp() {
 	mPipelineManager.CreateGraphicsPipeline();
 	glUseProgram(mGraphicsPipelineShaderProgram);
 
-	//auto location = glGetUniformLocation(mGraphicsPipelineShaderProgram, "uTextures");
-	//int samplers[32];
-	//for (int i = 0; i < 32; i++) {
-	//	samplers[i] = i;
-	//}
-	//glUniform1iv(location, 32, samplers);
-
 	mBatchRenderer.StartUp(mGraphicsPipelineShaderProgram);
-	
-
-
-	//mLevel.LoadLevel("levels/test_level.csv");
-	mLevel.LoadLevel("levels/GameLevels/Proto_Level_BaseLayer.csv");
+	mLevel.LoadLevelJson("levels/GameLevels/32p/Level_1.json");
 	mLevel.BuildLevel();
 
 	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
 		mLevel.mBlocks[i].Update();
 	}
 
-	mActor.mSprite.vertexData.Position = glm::vec2(800.0f, 280.0f);
-	mActor.mSprite.vertexData.Size = glm::vec2(30.0f, 30.0f);
+	mActor.mSprite.vertexData.Position = glm::vec2(12000.0f, 970.0f);
+	mActor.mSprite.vertexData.Size = glm::vec2(25.0f, 32.0f);
 
 	mActor.mPosition = mActor.mSprite.vertexData.Position;
 
-	test1.push_back(object1);
+	SDL_Surface* tileset = mTextureHandler.LoadSurface("assets/Level/tiles32.png");
 
-	SDL_Surface* tileset = mTextureHandler.LoadSurface("levels/GameLevels/tiles.png");
+	mTextureHandler.InitTextureArray(GL_RGBA8, 32, 32, 1024);
 
-	//IMG_SavePNG(tileset, "tiles.png");
-
-	mTextureHandler.InitTextureArray(GL_RGBA8, 8, 8, 1024);
-
-	std::vector<SDL_Surface*> tiles = mTextureHandler.CutTileset(tileset, 8, 8);
-
-	uint32_t whiteTextureData[8 * 8];
-	for (int i = 0; i < 8 * 8; i++) {
+	uint32_t whiteTextureData[32 * 32];
+	for (int i = 0; i < 32 * 32; i++) {
 		whiteTextureData[i] = 0xFFFFFFFF; // RGBA: White
 	}
-	
-	
-	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 8, 8, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 32, 32, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
+	mTextureHandler.layersUsed[0]++;
 
+	std::vector<SDL_Surface*> tiles = mTextureHandler.CutTileset(tileset, 32, 32);
 	for (int i = 0; i < tiles.size(); i++) {
-		mTextureHandler.LoadTexture(tiles[i], GL_RGBA, i + 1);
+		mTextureHandler.LoadTexture(tiles[i], GL_RGBA, mTextureHandler.layersUsed[0], 0);
+		//std::cout << "Loading texture into Texture2DArray on layer:" << i + 1 << std::endl;
 	}
 
-	//IMG_SavePNG(tiles[0], "tile.png");
+	mAnimationHandler.Init();
 
-	// temp
-
-	//SDL_Surface* surface = IMG_Load("levels/tiles/321.png");
-	//if (!surface) {
-	//	std::cerr << "IMG_Load Error: " << std::endl;
-	//	exit(1);
-	//}
-	//SDL_Surface* surface1 = IMG_Load("levels/tiles/122.png");
-	//if (!surface1) {
-	//	std::cerr << "IMG_Load Error: " << std::endl;
-	//	exit(1);
-	//}
-	//glGenTextures(1, &textureArray);
-	//glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);
-	//
-	//glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, 8, 8, 1024);
-	//
-	//glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 1, 8, 8, 1, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-	//glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 2, 8, 8, 1, GL_RGBA, GL_UNSIGNED_BYTE, surface1->pixels);
-	//
-	//uint32_t whiteTextureData[8 * 8];
-	//for (int i = 0; i < 8 * 8; i++) {
-	//	whiteTextureData[i] = 0xFFFFFFFF; // RGBA: White
-	//}
-	//
-	//
-	//glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 8, 8, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
-	//
-	//// Set texture parameters
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//
-	//glActiveTexture(GL_TEXTURE0);  // Ensure we're working on texture unit 0
-	//glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);  // Bind the texture array
-	//glUniform1i(glGetUniformLocation(mGraphicsPipelineShaderProgram, "uTextures"), 0); // Set sampler uniform
-
+	mAudioHandler.LoadSounds();
 
 	int maxCombinedUnits, maxFragmentUnits, maxVertexUnits, maxArrayLayers;
 
@@ -173,24 +128,23 @@ void App::PostStartUp() {
 	glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &maxVertexUnits);
 	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxArrayLayers);
 
-	printf("Max Combined Texture Units: %d\n", maxCombinedUnits);
-	printf("Max Fragment Texture Units: %d\n", maxFragmentUnits);
-	printf("Max Vertex Texture Units: %d\n", maxVertexUnits);
-	printf("Max Array Texture Layers: %d\n", maxArrayLayers);
+	//printf("Max Combined Texture Units: %d\n", maxCombinedUnits);
+	//printf("Max Fragment Texture Units: %d\n", maxFragmentUnits);
+	//printf("Max Vertex Texture Units: %d\n", maxVertexUnits);
+	//printf("Max Array Texture Layers: %d\n", maxArrayLayers);
 
 	int activeTextureUnit;
 	glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTextureUnit);
-	printf("Active texture unit: GL_TEXTURE%d\n", activeTextureUnit - GL_TEXTURE0);
+	//printf("Active texture unit: GL_TEXTURE%d\n", activeTextureUnit - GL_TEXTURE0);
 
 	int boundTexture;
 	glGetIntegerv(GL_TEXTURE_BINDING_2D_ARRAY, &boundTexture);
-	printf("Bound texture ID to GL_TEXTURE0: %d\n", boundTexture);
+	//printf("Bound texture ID to GL_TEXTURE0: %d\n", boundTexture);
 
 	int samplerValue;
 	int location = glGetUniformLocation(mGraphicsPipelineShaderProgram, "uTextures");
 	glGetUniformiv(mGraphicsPipelineShaderProgram, location, &samplerValue);
-	printf("Uniform 'ourTextures' is set to texture unit: %d\n", samplerValue);
-
+	//printf("Uniform 'ourTextures' is set to texture unit: %d\n", samplerValue);
 }
 
 void App::MainLoop() {
@@ -204,11 +158,13 @@ void App::MainLoop() {
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
 
-
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
 		glViewport(0, 0, mWindowWidth, mWindowHeight);
 		glClearColor((14.0f / 256.0f), (7.0f / 256.0f), (27.0f / 256.0f), 1.0f);
+		//glClearColor((18.0f / 256.0f), (14.0f / 256.0f), (40.0f / 256.0f), 1.0f);
 		//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		Update();
@@ -252,15 +208,14 @@ void App::Update() {
 	}
 
 	tp1 = tp2;
+
 	mMovementHandler.Update(deltaTime);
 
-	CollisionUpdate(mLevel.mBlocks, mActor, mMovementHandler.LeftWallHug, mMovementHandler.RightWallHug, deltaTime);
+	CollisionUpdate(mLevel.mBlocks, mActor, mMovementHandler.LeftWallHug, mMovementHandler.RightWallHug, deltaTime, mMovementHandler.isGrounded);
 
 	mActor.Update();
 	mCamera.Update(mActor.velocity, mActor.mScreenPosition, deltaTime);
 	mActor.mScreenPosition = mCamera.GetProjectionMatrix() * glm::vec4(mActor.mPosition.x + mActor.mSprite.vertexData.Size.x / 2, mActor.mPosition.y + mActor.mSprite.vertexData.Size.y / 2, 0.0f, 1.0f);
-
-
 
 	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
 
@@ -274,8 +229,7 @@ void App::Update() {
 		mBatchRenderer.DrawInBatch(glm::vec2(600.0f, 810.0f), glm::vec2(20.0f, 20.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
 	}
 	if (mMovementHandler.KeyboadStates[static_cast<int>(MovementState::SPACE)]) {
-		//mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 810.0f), glm::vec2(20.0f, 20.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-		//mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 810.0f), glm::vec2(20.0f, 20.0f), textureID1);
+		mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 810.0f), glm::vec2(20.0f, 20.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
 	}
 	if (mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)]) {
 		mBatchRenderer.DrawInBatch(glm::vec2(640.0f, 810.0f), glm::vec2(20.0f, 20.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
@@ -289,42 +243,24 @@ void App::Update() {
 	if (mMovementHandler.KeyboadStates[static_cast<int>(MovementState::DUCK)]) {
 		mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 750.0f), glm::vec2(20.0f, 20.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
 	}
-	if (mActor.isGrounded) {
+	if (mMovementHandler.isGrounded) {
 		mBatchRenderer.DrawInBatch(glm::vec2(80.0f, 900.0f), glm::vec2(20.0f, 20.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 	}
 
 	mBatchRenderer.EndBatch();
 	mBatchRenderer.Flush(mCamera.mUIModelMatrix);
 
-	uint32_t ddd = 0;
-
-
-	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
-	//mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 1000.0f), glm::vec2(20.0f, 20.0f), glm::vec4(0.53f, 0.12f, 0.87f, 1.0f));
-	uint32_t d = 0;
-	for (int u = 0; u < 23; u++) {
-		d++;
-		//mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 850.0f), glm::vec2(10.0f + 10.0f * d, 10.0f), d);
-	}
-	//for (uint32_t tt = 0; tt < 23; tt++) {
-	//	mBatchRenderer.DrawInBatch(glm::vec2(620.0f + 40.0f * tt, 850.0f), glm::vec2(40.0f, 40.0f), tt);
-	//}
-
-	mBatchRenderer.DrawInBatch(glm::vec2(80.0f, 800.0f), glm::vec2(40.0f, 40.0f), ddd);
-
-
-	mBatchRenderer.EndBatch();
-	mBatchRenderer.Flush(mCamera.mUIModelMatrix);
-
-
-
 
 	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
 	int j = 0;
 
 	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
-		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x - 80.0f) 
-			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x + 2000.0f)) {
+		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x - 80.0f)
+			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x + 2000.0f) && mLevel.mBlocks[i].isVisible == false) {
+			//mBatchRenderer.DrawInBatch(mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size, glm::vec4(1.0f, 0.0f, 0.0f, 0.2f));
+		}
+		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x - 80.0f)
+			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x + 2000.0f) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == false) {
 		mBatchRenderer.DrawInBatch(mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size, static_cast<uint32_t>(mLevel.mBlocks[i].mSprite.vertexData.TextureIndex));
 		j++;
 		}
@@ -335,25 +271,372 @@ void App::Update() {
 	mBatchRenderer.EndBatch();
 	mBatchRenderer.Flush();
 
-	glm::vec4 temp_color;
+	glm::vec4 temp_color1 = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
 
-	if (!mActor.isGrounded && !mMovementHandler.canWallStick && mMovementHandler.canDoubleJump) {
-		temp_color = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
-	}
-	else if (!mActor.isGrounded && !mMovementHandler.canWallStick && !mMovementHandler.canDoubleJump) {
-		temp_color = glm::vec4(0.5f, 0.0f, 1.0f, 1.0f);
-	}
-	else if (!mActor.isGrounded && mMovementHandler.canWallStick) {
-		temp_color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-	}
-	else {
-		temp_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+	//mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, temp_color, mCamera.GetProjectionMatrix(), mActor.mModelMatrix);
+
+	//sound vvv
+
+
+
+	//sound ^^^
+
+
+
+	//black hole code vvv
+	// needs refactoring and optimization, this is just a prototype version
+	
+	glm::vec2 voidPos = glm::vec2(200.0f, 500.0f);
+	static glm::vec2 range = glm::vec2(100.0f, 1080.f);
+
+	//range.x += 144.0f * deltaTime;
+
+	//mBatchRenderer.DrawSeperatly(glm::vec2(0.0f, 0.0f), range, glm::vec4(1.0f, 1.0f, 1.0f, 0.02f), mCamera.GetProjectionMatrix());
+	mBatchRenderer.DrawSeperatly(voidPos, glm::vec2(40.0f, 40.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), mCamera.GetProjectionMatrix());
+
+	std::random_device rd;
+	std::mt19937 gen(rd());
+	std::uniform_real_distribution<> dis(1.0f, 5.0f);
+
+	if (RectVsRect(glm::vec2(0.0f, 0.0f), range, mActor.mPosition, mActor.mSprite.vertexData.Size) && mActor.isSucked == false) {
+		//mActor.isSucked = true;
+		//mMovementHandler.debugMove = true;
+		//mActor.flyDirectionNormalized = glm::normalize(voidPos - mActor.mPosition);
+		//std::cout << glm::to_string(mActor.flyDirectionNormalized) << std::endl;
+		//mActor.velocity = mActor.flyDirectionNormalized * (float)dis(gen);
 	}
 
-	if (mMovementHandler.isSliding) {
-		temp_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+	std::vector<std::pair<int, float>> affectedBlocks;
+
+	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
+		if (RectVsRect(glm::vec2(0.0f, 0.0f), range, mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == false) {
+			affectedBlocks.push_back({i , glm::distance2(voidPos, mLevel.mBlocks[i].mSprite.vertexData.Position)});
+		}
 	}
-	mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, temp_color, mCamera.GetProjectionMatrix(), mActor.mModelMatrix);
+
+	std::sort(affectedBlocks.begin(), affectedBlocks.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
+		return a.second < b.second;
+		});
+
+	if (mActor.isSucked == true) {
+		mActor.velocity += mActor.velocity * 2.16f * deltaTime;
+
+		glm::vec2 center = glm::vec2(mActor.mSprite.vertexData.Position.x + mActor.mSprite.vertexData.Size.x / 2, mActor.mSprite.vertexData.Position.y + mActor.mSprite.vertexData.Size.y / 2);
+
+		// Compute the dot product
+		float dot = glm::dot(mActor.flyDirectionNormalized, glm::vec2(-1.0f, 0.0f));
+
+		// Compute the magnitudes of both vectors
+		float magV1 = glm::length(glm::vec2(-1.0f, 0.0f));
+		float magV2 = glm::length(mActor.flyDirectionNormalized);
+
+		// Compute the cosine of the angle
+		float cosTheta = dot / (magV1 * magV2);
+
+		// Clamp the value to avoid numerical errors leading to invalid values for acos
+		cosTheta = glm::clamp(cosTheta, -1.0f, 1.0f);
+
+		// Calculate the angle in radians
+		mActor.flyAngleTarget = glm::acos(cosTheta);
+
+
+		// Step 1: Translate to origin
+		mActor.mModelMatrix = glm::translate(mActor.mModelMatrix, glm::vec3(center, 0.0f));
+
+		float crossProduct = glm::cross(mActor.flyDirectionNormalized, glm::vec2(-1.0f, 0.0f));
+
+		if (crossProduct > 0) {
+			mActor.mModelMatrix = glm::rotate(mActor.mModelMatrix, -mActor.flyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+		}
+		else if (crossProduct < 0) {
+			mActor.mModelMatrix = glm::rotate(mActor.mModelMatrix, mActor.flyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+		}
+
+		// Step 2: Apply rotation
+		
+		// Step 3: Translate back
+		mActor.mModelMatrix = glm::translate(mActor.mModelMatrix, glm::vec3(-center, 0.0f));
+	}
+
+	if (mActor.flyAngle < mActor.flyAngleTarget) {
+		mActor.flyAngle += 0.1f * deltaTime;
+	}
+
+	for (int i = 0; i < affectedBlocks.size(); i++) {
+		mLevel.mBlocks[affectedBlocks[i].first].isVisible = true;
+		mLevel.mBlocks[affectedBlocks[i].first].isCollidable = false;
+		mLevel.mBlocks[affectedBlocks[i].first].isSucked = true;
+		mLevel.mBlocks[affectedBlocks[i].first].flyDirectionNormalized = glm::normalize(voidPos - mLevel.mBlocks[affectedBlocks[i].first].mSprite.vertexData.Position);
+		mLevel.mBlocks[affectedBlocks[i].first].tempVelocity = mLevel.mBlocks[affectedBlocks[i].first].flyDirectionNormalized * (float)dis(gen);
+	}
+
+	float voidTime = 0.01f;
+	static float voidTimer = 0.0f;
+	static int index1 = 0;
+	static int rot = 0;
+
+	voidTimer += deltaTime;
+
+	if (voidTimer > voidTime) {
+		rot += 1;
+
+
+		voidTimer = 0.0f;
+	}
+
+	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
+		if (mLevel.mBlocks[i].isSucked == true && mLevel.mBlocks[i].isVisible == true) {
+			mLevel.mBlocks[i].isCollidable = false;
+			mLevel.mBlocks[i].mSprite.vertexData.Position = mLevel.mBlocks[i].mSprite.vertexData.Position + mLevel.mBlocks[i].tempVelocity * deltaTime;
+			mLevel.mBlocks[i].tempVelocity += mLevel.mBlocks[i].tempVelocity * 2.16f * deltaTime;
+			// may need to use dynamic rectvsrect
+			if (RectVsRect(glm::vec2(voidPos.x, voidPos.y), glm::vec2(40.0f, 40.0f), mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size)) {
+				mLevel.mBlocks[i].isVisible = false;
+			}
+		}
+	}
+
+	std::uniform_real_distribution<> dis2(10.0f, 30.0f);
+
+	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
+		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x - 80.0f)
+			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x + 2000.0f) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == true) {
+
+
+			glm::mat4 model = glm::mat4(1.0f);
+
+			glm::vec2 center = glm::vec2(mLevel.mBlocks[i].mSprite.vertexData.Position.x + mLevel.mBlocks[i].mSprite.vertexData.Size.x / 2, mLevel.mBlocks[i].mSprite.vertexData.Position.y + mLevel.mBlocks[i].mSprite.vertexData.Size.y / 2);
+
+			// Compute the dot product
+			float dot = glm::dot(mLevel.mBlocks[i].flyDirectionNormalized, glm::vec2(-1.0f, 0.0f));
+
+			// Compute the magnitudes of both vectors
+			float magV1 = glm::length(glm::vec2(-1.0f, 0.0f));
+			float magV2 = glm::length(mLevel.mBlocks[i].flyDirectionNormalized);
+
+			// Compute the cosine of the angle
+			float cosTheta = dot / (magV1 * magV2);
+
+			// Clamp the value to avoid numerical errors leading to invalid values for acos
+			cosTheta = glm::clamp(cosTheta, -1.0f, 1.0f);
+
+			// Calculate the angle in radians
+			mLevel.mBlocks[i].flyAngleTarget = glm::acos(cosTheta);
+
+
+			// Step 1: Translate to origin
+			model = glm::translate(model, glm::vec3(center, 0.0f));
+
+			float crossProduct = glm::cross(mLevel.mBlocks[i].flyDirectionNormalized, glm::vec2(-1.0f, 0.0f));
+
+			if (crossProduct > 0) {
+				model = glm::rotate(model, -mLevel.mBlocks[i].flyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+			}
+			else if (crossProduct < 0) {
+				model = glm::rotate(model, mLevel.mBlocks[i].flyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+			}
+
+			// Step 2: Apply rotation
+
+			// Step 3: Translate back
+			model = glm::translate(model, glm::vec3(-center, 0.0f));
+
+			if (mLevel.mBlocks[i].flyAngle < mLevel.mBlocks[i].flyAngleTarget) {
+				mLevel.mBlocks[i].flyAngle += 1.0f * deltaTime;
+			}
+
+
+			mBatchRenderer.DrawSeperatly(mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
+				static_cast<uint32_t>(mLevel.mBlocks[i].mSprite.vertexData.TextureIndex), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 0.0f), model, false);
+		}
+	}
+
+	if (rot == 360) {
+		rot = 0;
+	}
+
+
+	//black hole code ^^^
+
+	
+
+	bool flipped;
+
+	switch (mMovementHandler.lookDirection) {
+	case LookDirections::LEFT:
+		flipped = true;
+		break;
+	case LookDirections::RIGHT:
+		flipped = false;
+		break;
+	}
+	//std::cout << mAnimationHandler.RunAnimation.index << std::endl;
+
+
+	static bool runAnimOneShot = true;
+	static bool runsound;
+	static float FallVolumeTime = 0.1f;
+	static float FallVolumeTimer = 0.0f;
+	static int FallVolume = 1;
+	switch (mMovementHandler.currentPlayerState) {
+	case PlayerStates::RUNNING:
+		if (runAnimOneShot) {
+			mAnimationHandler.RunAnimation.AnimationTimer = std::chrono::high_resolution_clock::now();
+			mAnimationHandler.RunAnimation.SingleFrameTimer = std::chrono::high_resolution_clock::now();
+			runAnimOneShot = false;
+		}
+		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - mAnimationHandler.RunAnimation.AnimationTimer).count() > mAnimationHandler.RunAnimation.AnimationTime + deltaTime * 1000) {
+			mAnimationHandler.RunAnimation.AnimationTimer = std::chrono::high_resolution_clock::now();
+			mAnimationHandler.RunAnimation.index = 0;
+		}
+		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - mAnimationHandler.RunAnimation.SingleFrameTimer).count() > mAnimationHandler.RunAnimation.SingleFrameTime + deltaTime * 1000) {
+			mAnimationHandler.RunAnimation.SingleFrameTimer = std::chrono::high_resolution_clock::now();
+			mAnimationHandler.RunAnimation.index++;
+		}
+		if (mAnimationHandler.RunAnimation.index > mAnimationHandler.RunAnimation.AnimationTextureIndexes.size() - 1) {
+			mAnimationHandler.RunAnimation.index = 0;
+		}
+		if ((mAnimationHandler.RunAnimation.index == 1 || mAnimationHandler.RunAnimation.index == 2 || mAnimationHandler.RunAnimation.index == 4 || mAnimationHandler.RunAnimation.index == 5) && runsound == false) {
+			runsound = true;
+		}
+
+		//std::cout << "runsound: " << runsound << std::endl;
+
+		if ((mAnimationHandler.RunAnimation.index == 3 || mAnimationHandler.RunAnimation.index == 0) && runsound == true) {
+			runsound = false;
+			mAudioHandler.PlayNextStepSound();
+		}
+
+		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
+		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.RunAnimation.Size* mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
+			mAnimationHandler.RunAnimation.AnimationTextureIndexes[mAnimationHandler.RunAnimation.index], mAnimationHandler.RunAnimation.Size, mAnimationHandler.RunAnimation.TexturePosition, mActor.mModelMatrix, flipped);
+		//std::cout << "RUN" << std::endl;
+		break;
+	case PlayerStates::JUMPING:
+		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
+		//mActor.mSprite.vertexData.Size = mAnimationHandler.JumpAnimation.Size * mActor.mSizeMultiplier;
+		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.JumpAnimation.Size * mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
+			mAnimationHandler.JumpAnimation.AnimationTextureIndexes[0], mAnimationHandler.JumpAnimation.Size, mAnimationHandler.JumpAnimation.TexturePosition, mActor.mModelMatrix, flipped);
+		if (mMovementHandler.CheckPlayerStateChange()) {
+			Mix_PlayChannel(2, mAudioHandler.Jump, 0);
+		}
+		mAnimationHandler.RunAnimation.index = 0;
+		runAnimOneShot = true;
+		break;
+	case PlayerStates::DOUBLE_JUMPING:
+		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
+		//mActor.mSprite.vertexData.Size = mAnimationHandler.JumpAnimation.Size * mActor.mSizeMultiplier;
+		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.JumpAnimation.Size * mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
+			mAnimationHandler.JumpAnimation.AnimationTextureIndexes[0], mAnimationHandler.JumpAnimation.Size, mAnimationHandler.JumpAnimation.TexturePosition, mActor.mModelMatrix, flipped);
+		//std::cout << "JUMP" << std::endl;
+		if (mMovementHandler.CheckPlayerStateChange()) {
+			Mix_PlayChannel(3, mAudioHandler.DoubleJump, 0);
+		}
+		mAnimationHandler.RunAnimation.index = 0;
+		runAnimOneShot = true;
+		break;
+	case PlayerStates::FALLING:
+		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
+		//mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
+		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.FallAnimation.Size* mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
+			mAnimationHandler.FallAnimation.AnimationTextureIndexes[0], mAnimationHandler.FallAnimation.Size, mAnimationHandler.FallAnimation.TexturePosition, mActor.mModelMatrix, flipped);
+		if (!Mix_Playing(4)) {
+			Mix_PlayChannel(4, mAudioHandler.WindSoft, 0);
+		}
+
+		if (FallVolumeTimer >= FallVolumeTime) {
+			FallVolumeTimer = 0.0f;
+			FallVolume += 10;
+			Mix_Volume(4, FallVolume);
+		}
+		else {
+			FallVolumeTimer += deltaTime;
+		}
+		//std::cout << "FALL" << std::endl;
+		mAnimationHandler.RunAnimation.index = 0;
+		runAnimOneShot = true;
+		break;
+	case PlayerStates::SLIDING:
+		mActor.mSprite.vertexData.Size = mAnimationHandler.SlideAnimation.Size * mActor.mSizeMultiplier;
+		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
+			mAnimationHandler.SlideAnimation.AnimationTextureIndexes[0], mAnimationHandler.SlideAnimation.Size, mAnimationHandler.SlideAnimation.TexturePosition, mActor.mModelMatrix, flipped);
+		//std::cout << "SLIDE" << std::endl;
+		if (!Mix_Playing(5)) {
+			Mix_PlayChannel(5, mAudioHandler.Slide, 0);
+		}
+		mAnimationHandler.RunAnimation.index = 0;
+		runAnimOneShot = true;
+		break;
+	case PlayerStates::SLAMMING:
+		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
+		//mActor.mSprite.vertexData.Size = mAnimationHandler.SlamAnimation.Size * mActor.mSizeMultiplier;
+		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.SlamAnimation.Size * mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
+			mAnimationHandler.SlamAnimation.AnimationTextureIndexes[0], mAnimationHandler.SlamAnimation.Size, mAnimationHandler.SlamAnimation.TexturePosition, mActor.mModelMatrix, flipped);
+		//std::cout << "SLAM" << std::endl;
+		mAnimationHandler.RunAnimation.index = 0;
+		runAnimOneShot = true;
+		break;
+	case PlayerStates::WALLSLIDING:
+		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
+		//mActor.mSprite.vertexData.Size = mAnimationHandler.WallSlideAnimation.Size * mActor.mSizeMultiplier;
+		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.WallSlideAnimation.Size * mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
+			mAnimationHandler.WallSlideAnimation.AnimationTextureIndexes[0], mAnimationHandler.WallSlideAnimation.Size, mAnimationHandler.WallSlideAnimation.TexturePosition, mActor.mModelMatrix, !flipped);
+		//std::cout << "WALL" << std::endl;
+		if (!Mix_Playing(6)) {
+			Mix_PlayChannel(6, mAudioHandler.WallSlide, 0);
+		}
+		mAnimationHandler.RunAnimation.index = 0;
+		runAnimOneShot = true;
+		break;
+	case PlayerStates::DEAD:
+
+		break;
+	case PlayerStates::HIT:
+
+		break;
+	case PlayerStates::IDLE:
+		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
+		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
+			mAnimationHandler.IdleAnimation.AnimationTextureIndexes[0], mAnimationHandler.IdleAnimation.Size, mAnimationHandler.IdleAnimation.TexturePosition, mActor.mModelMatrix, flipped);
+		//std::cout << "IDLE" << std::endl;
+		mAnimationHandler.RunAnimation.index = 0;
+		runAnimOneShot = true;
+		break;
+	}
+	
+	if (mMovementHandler.CheckPlayerStateChange()) {
+		if (mMovementHandler.CompareToLastState(PlayerStates::SLAMMING) && mMovementHandler.currentPlayerState != PlayerStates::SLAMMING) {
+			mAudioHandler.PlayNextLandHardSound();
+		}
+
+		if (mMovementHandler.CompareToLastState(PlayerStates::FALLING) && mMovementHandler.currentPlayerState != PlayerStates::FALLING && mMovementHandler.currentPlayerState != PlayerStates::SLAMMING && mMovementHandler.currentPlayerState != PlayerStates::DOUBLE_JUMPING) {
+			mAudioHandler.PlayNextLandSoftSound();
+		}
+
+		if (mMovementHandler.currentPlayerState != PlayerStates::SLIDING) {
+			Mix_HaltChannel(5);
+		}
+		if (mMovementHandler.currentPlayerState != PlayerStates::WALLSLIDING) {
+			Mix_HaltChannel(6);
+		}
+		if (mMovementHandler.currentPlayerState != PlayerStates::FALLING) {
+			Mix_HaltChannel(4);
+			Mix_Volume(4, 0);
+			FallVolume = 1;
+		}
+
+	}
+
+
+	std::cout << glm::to_string(mActor.velocity) << std::endl;
+
+	//uint32_t test123 = 529;
+	//glm::vec2 test5 = mAnimationHandler.FallAnimation.Size;
+	//glm::vec2 test6 = mAnimationHandler.FallAnimation.TexturePosition;
+	//
+	//
+	//mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(), test123, test5, test6, mActor.mModelMatrix);
+	//std::cout << glm::to_string(mActor.velocity) << std::endl;
 
 	//std::cout << "Km/h :" << std::abs((mActor.velocity.x / 54.0f) * 3.6f) << std::endl;
 	//static std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> tmp1;
@@ -376,6 +659,8 @@ void App::ShutDown() {
 	//glDeleteVertexArrays(1, &gMesh1.mVAO);
 	glDeleteProgram(mGraphicsPipelineShaderProgram);
 
+	Mix_Quit();
+	IMG_Quit();
 	SDL_Quit();
 }
 

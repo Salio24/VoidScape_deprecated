@@ -40,6 +40,12 @@
     <Filter Include="Source Files\Level">
       <UniqueIdentifier>{63cea188-20f6-4006-960c-4524d3e432a2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Sound">
+      <UniqueIdentifier>{7bda2ada-b1a3-4630-8dc1-68f0892b4d97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Sound">
+      <UniqueIdentifier>{bc7f2fc4-0bdf-4122-bc68-3a4de4dc680f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="App.cpp">
@@ -102,6 +108,12 @@
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
+    <ClCompile Include="AnimationHandler.cpp">
+      <Filter>Source Files\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="AudioHandler.cpp">
+      <Filter>Source Files\Sound</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.hpp">
@@ -160,6 +172,12 @@
     </ClInclude>
     <ClInclude Include="Texture.hpp">
       <Filter>Header Files\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="AnimationHandler.hpp">
+      <Filter>Header Files\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="AudioHandler.hpp">
+      <Filter>Header Files\Sound</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

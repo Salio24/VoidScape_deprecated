@@ -8,6 +8,7 @@ flat in int vTextureIndex;
 
 //uniform sampler2D uTextures[32];
 uniform sampler2DArray uTextures;
+uniform sampler2D uCharacterSheet;
 
 void main() {
 

@@ -63,15 +63,6 @@ void BatchRenderer::StartUp(const GLuint& PipelineProgram) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	//glCreateTextures(GL_TEXTURE_2D, 1, &WhiteTexture);
-	//glBindTexture(GL_TEXTURE_2D, WhiteTexture);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	//uint32_t color = 0xffffffff;
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &color);
-
 	TextureSlots[0] = WhiteTexture;
 	for (size_t i = 1; i < MaxTextureSlots; i++) {
 		TextureSlots[i] = 0;
@@ -110,7 +101,7 @@ void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size
 
 	QuadBufferPtr->Position = {position.x, position.y};
 	QuadBufferPtr->Color = color;
-	QuadBufferPtr->TexturePosition = {0.0f, 0.0f};
+	QuadBufferPtr->TexturePosition = { 0.0f, 0.0f };
 	QuadBufferPtr->TextureIndex = 0;
 	QuadBufferPtr++;
 
@@ -135,7 +126,7 @@ void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size
 	IndexCount += 6;
 }
 
-void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size, uint32_t textureID) {
+void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size, uint32_t textureID, const glm::vec2& textureSize, const glm::vec2& texturePosition, const bool& drawFliped) {
 	if (IndexCount >= MaxIndexCount || TextureSlotIndex > 1024) {
 		EndBatch();
 		Flush();
@@ -158,29 +149,56 @@ void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size
 	//	TextureSlotIndex++;
 	//}
 
-	QuadBufferPtr->Position = { position.x, position.y };
-	QuadBufferPtr->Color = color;
-	QuadBufferPtr->TexturePosition = { 0.0f, 0.0f };
-	QuadBufferPtr->TextureIndex = textureID;
-	QuadBufferPtr++;
+	if (drawFliped == true) {
+		QuadBufferPtr->Position = { position.x, position.y };
+		QuadBufferPtr->Color = color;
+		QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y };
+		QuadBufferPtr->TextureIndex = textureID;
+		QuadBufferPtr++;
 
-	QuadBufferPtr->Position = { position.x + size.x, position.y };
-	QuadBufferPtr->Color = color;
-	QuadBufferPtr->TexturePosition = { 1.0f, 0.0f };
-	QuadBufferPtr->TextureIndex = textureID;
-	QuadBufferPtr++;
+		QuadBufferPtr->Position = { position.x + size.x, position.y };
+		QuadBufferPtr->Color = color;
+		QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y };
+		QuadBufferPtr->TextureIndex = textureID;
+		QuadBufferPtr++;
 
-	QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
-	QuadBufferPtr->Color = color;
-	QuadBufferPtr->TexturePosition = { 1.0f, 1.0f };
-	QuadBufferPtr->TextureIndex = textureID;
-	QuadBufferPtr++;
+		QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
+		QuadBufferPtr->Color = color;
+		QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y + textureSize.y };
+		QuadBufferPtr->TextureIndex = textureID;
+		QuadBufferPtr++;
 
-	QuadBufferPtr->Position = { position.x, position.y + size.y };
-	QuadBufferPtr->Color = color;
-	QuadBufferPtr->TexturePosition = { 0.0f, 1.0f };
-	QuadBufferPtr->TextureIndex = textureID;
-	QuadBufferPtr++;
+		QuadBufferPtr->Position = { position.x, position.y + size.y };
+		QuadBufferPtr->Color = color;
+		QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y + textureSize.y };
+		QuadBufferPtr->TextureIndex = textureID;
+		QuadBufferPtr++;
+	}
+	else if (drawFliped == false) {
+		QuadBufferPtr->Position = { position.x, position.y };
+		QuadBufferPtr->Color = color;
+		QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y };
+		QuadBufferPtr->TextureIndex = textureID;
+		QuadBufferPtr++;
+
+		QuadBufferPtr->Position = { position.x + size.x, position.y };
+		QuadBufferPtr->Color = color;
+		QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y };
+		QuadBufferPtr->TextureIndex = textureID;
+		QuadBufferPtr++;
+
+		QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
+		QuadBufferPtr->Color = color;
+		QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y + textureSize.y };
+		QuadBufferPtr->TextureIndex = textureID;
+		QuadBufferPtr++;
+
+		QuadBufferPtr->Position = { position.x, position.y + size.y };
+		QuadBufferPtr->Color = color;
+		QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y + textureSize.y };
+		QuadBufferPtr->TextureIndex = textureID;
+		QuadBufferPtr++;
+	}
 
 	IndexCount += 6;
 }
@@ -189,6 +207,13 @@ void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size
 void BatchRenderer::DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::vec4& color, const glm::mat4& ProjectionMatrix, const glm::mat4& ModelMatrix) {
 	BeginBatch(ProjectionMatrix);
 	DrawInBatch(position, size, color);
+	EndBatch();
+	Flush(ModelMatrix);
+}
+
+void BatchRenderer::DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::mat4& ProjectionMatrix, uint32_t textureID, const glm::vec2& textureSize, const glm::vec2& texturePosition, const glm::mat4& ModelMatrix, const bool& drawFliped) {
+	BeginBatch(ProjectionMatrix);
+	DrawInBatch(position, size, textureID, textureSize, texturePosition, drawFliped);
 	EndBatch();
 	Flush(ModelMatrix);
 }

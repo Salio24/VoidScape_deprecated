@@ -33,5 +33,7 @@ public:
 	glm::vec2 mRelativePosition{ 0.0f, 0.0f };
 
 	glm::vec2 mScreenPosition{ 0.0f, 0.0f };
+
+	float mSizeMultiplier{ 60.0f };
 private:
 };

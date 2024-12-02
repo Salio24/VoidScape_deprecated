@@ -20,6 +20,9 @@
 #include <chrono>
 #include <SDL3/SDL_hints.h>
 #include "Texture.hpp"
+#include "AnimationHandler.hpp"
+#include "AudioHandler.hpp"
+
 
 class App {
 	App();
@@ -70,16 +73,20 @@ public:
 
 	MovementHandler mMovementHandler;
 
+	AudioHandler mAudioHandler;
+
 	GameLevel mLevel;
 
-	GLuint textureArray;
-
 	TextureHandler mTextureHandler;
+
+	AnimationHandler mAnimationHandler;
 
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> tp1;
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> tp2;
 
 	GameEntity object1;
+
+	glm::vec4 temp_color;
 
 	std::vector<GameObject> test1;
 
@@ -91,7 +98,7 @@ public:
 	bool tmpbool2{ true };
 
 	bool mQuit{ false };
-	bool mVsync{ false };
+	bool mVsync{ true };
 	bool mDebug{ true };
 
 	float deltaTime{ 0.1f };

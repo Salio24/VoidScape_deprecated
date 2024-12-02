@@ -16,8 +16,6 @@ public:
 
 	float movementSpeed{ 300.0f };
 
-	bool isGrounded{ false };
-
 	bool isWallMountable{ false };
 	bool isWallMountableL{ false };
 	bool isWallMountableR{ false };

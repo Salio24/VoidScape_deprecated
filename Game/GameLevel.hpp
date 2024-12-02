@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include "GameObject.hpp"
+#include <nlohmannjson/json.hpp>
 #include "IO.hpp"
 #include <iostream>
 #include <fstream>
@@ -13,18 +14,28 @@ public:
 
 	~GameLevel();
 
+	//nlohmann::json GameLevelDataJson;
+
 	std::vector<GameObject> mBlocks;
 
-	std::vector<std::vector<std::string>> mLevelData;
+	std::vector<std::vector<std::string>> mLevelDataCsv;
+
+	std::vector<std::vector<std::vector<int>>> mLevelData;
+
+	std::vector<int> mTilesetsOffsets;
 
 	void LoadLevel(const std::string file);
 
+	void LoadLevelJson(const std::string file);
+
 	void BuildLevel();
+
+	void BuildLevelOld();
 
 	bool isLoaded{ false };
 
-	uint16_t mLevelWidth;
-	uint16_t mLevelHeight;
+	int mLevelWidth;
+	int mLevelHeight;
 
 	uint8_t mBlockSize{ 18 };
 

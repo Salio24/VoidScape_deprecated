@@ -27,16 +27,17 @@ void TextureHandler::InitTextureArray(const GLenum& internalformat, const GLsize
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
+    layersUsed[TextureSlotsTaken] = 0;
 	TextureSlotsTaken++;
 }
 
-void TextureHandler::LoadTexture(SDL_Surface* surface, const GLenum& internalformat, const int& layer) {
+void TextureHandler::LoadTexture(SDL_Surface* surface, const GLenum& internalformat, const int& layer, const int& slot) {
 	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, surface->w, surface->h, 1, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
     SDL_DestroySurface(surface);
+    layersUsed[slot]++;
 }
 
-std::vector<SDL_Surface*> TextureHandler::CutTileset(SDL_Surface* tileset, int tileWidth, int tileHeight) {
+std::vector<SDL_Surface*> TextureHandler::CutTileset(SDL_Surface* tileset, const int& tileWidth, const int& tileHeight) {
 
     std::vector<SDL_Surface*> tiles;
 
@@ -44,18 +45,16 @@ std::vector<SDL_Surface*> TextureHandler::CutTileset(SDL_Surface* tileset, int t
     int rows = tileset->h / tileHeight;
     int cols = tileset->w / tileWidth;
 
+    tileset = SDL_ConvertSurface(tileset, SDL_PIXELFORMAT_ABGR8888);
+    if (!tileset) {
+        SDL_Log("Failed to convert tileset format: %s", SDL_GetError());
+    }
+
     for (int row = 0; row < rows; ++row) {
         for (int col = 0; col < cols; ++col) {
             // Define the rectangle for the current tile
             SDL_Rect srcRect = { col * tileWidth, row * tileHeight, tileWidth, tileHeight };    
 
-            SDL_Surface* convertedTileset = SDL_ConvertSurface(tileset, SDL_PIXELFORMAT_ABGR8888);
-            if (!convertedTileset) {
-                SDL_Log("Failed to convert tileset format: %s", SDL_GetError());
-            }
-            tileset = convertedTileset;
-
-            IMG_SavePNG(tileset, "tile8888.png");
 
             // Create a new surface for the tile
             SDL_Surface* tile = SDL_CreateSurface(tileWidth, tileHeight, tileset->format);
@@ -64,9 +63,11 @@ std::vector<SDL_Surface*> TextureHandler::CutTileset(SDL_Surface* tileset, int t
                 continue;
             }
 
+            //std::cout << "col: " << col << ", " << "row:  " << row << std::endl;
             // Copy the tile's pixels from the tileset to the new surface
             SDL_BlitSurface(tileset, &srcRect, tile, NULL);
             tiles.push_back(FlipSurfaceVertically(tile));
+            SDL_DestroySurface(tile);
         }
     }
     SDL_DestroySurface(tileset);

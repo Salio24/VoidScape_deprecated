@@ -37,9 +37,11 @@ void InputManager::Input() {
 				break;
 			case SDL_SCANCODE_A:
 				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] = false;
+				app().mMovementHandler.AOneShot = true;
 				break;
 			case SDL_SCANCODE_D:
 				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)] = false;
+				app().mMovementHandler.DOneShot = true;
 				break;
 			case SDL_SCANCODE_LSHIFT: 
 				app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::DUCK)] = false;
@@ -79,15 +81,12 @@ void InputManager::Input() {
 			app().tmpbool1 = true;
 			app().tmpbool2 = true;
 		}
-		//if (state[SDL_SCANCODE_LEFTBRACKET]) {
-		//	gMesh1.mTranslate.m_uOffsetZ = +0.01f;
-		//}
-		//if (state[SDL_SCANCODE_RIGHTBRACKET]) {
-		//	gMesh1.mTranslate.m_uOffsetZ = -0.01f;
-		//}
-		//if (state[SDL_SCANCODE_I]) {
-		//	gMesh1.mTranslate.m_uAngle = +1.0f;
-		//}
+		if (state[SDL_SCANCODE_K]) {
+			std::cout << glm::to_string(app().mActor.mPosition) << std::endl;
+		}
+		if (state[SDL_SCANCODE_I]) {
+			app().mActor.mPosition = glm::vec2(8000.0f, 300.0f);
+		}
 		if (state[SDL_SCANCODE_SPACE]) {
 			app().mMovementHandler.KeyboadStates[static_cast<int>(MovementState::SPACE)] = true;
 		}
