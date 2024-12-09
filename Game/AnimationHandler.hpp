@@ -22,7 +22,7 @@ public:
 	AnimationHandler(TextureHandler& textureHandlerRef);
 	~AnimationHandler();
 
-	void Init();
+	void Init(const int& samplerSize);
 
 	void InitMultiFrameAnimation(SDL_Surface* animationSpritesheet, Animation& animation, const glm::vec2& animationSize, const int& animationTime, const int& spriteSizeX, const int& spriteSizeY, const glm::vec2& texturePosition = glm::vec2(0.0f, 0.0f));
 
@@ -39,10 +39,15 @@ public:
 	Animation SlideAnimation;
 	Animation WallSlideAnimation;
 	Animation DuckIdleAnimation;
+	Animation BlackHoleBirthAnimation;
+	Animation BlackHoleLoopAnimation;
+	Animation EscapePortalAnimation;
 
 private:
 	TextureHandler&  mTextureHandlerRef;
 
-	int AnimationSpriteSizeX{ 32 };
-	int AnimationSpriteSizeY{ 32 };
+	int SampelrSize{ 0 };
+
+	const int AnimationSpriteSizeX{ 128 };
+	const int AnimationSpriteSizeY{ 128 };
 };

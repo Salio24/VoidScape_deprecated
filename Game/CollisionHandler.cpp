@@ -1,4 +1,8 @@
+#define GLM_ENABLE_EXPERIMENTAL
 #include "CollisionHandler.hpp"
+#include "glm/gtx/string_cast.hpp"
+#include "Actor.hpp"
+
 
 bool PointVsRect(const glm::vec2& p, const Box* r)
 {
@@ -84,7 +88,7 @@ bool DynamicRectVsRect(const Box& dynamicBox, const float deltaTime, const Box& 
 	Box expanded_target;
 	expanded_target.Position = staticBox.Position - ( dynamicBox.Size / 2.0f );
 	expanded_target.Size = staticBox.Size + dynamicBox.Size;
-
+	
 	if (RayVsRect(position + (dynamicBox.Size / 2.0f), dynamicBoxVelocity * deltaTime, &expanded_target, contactPoint, contactNormal, contactTime)) {
 		return (contactTime >= 0.0f && contactTime < 1.0f);
 	}
@@ -93,10 +97,9 @@ bool DynamicRectVsRect(const Box& dynamicBox, const float deltaTime, const Box& 
 	}
 }
 
-
-
-bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box& staticBox, glm::vec2& dynamicBoxVelocity, GameEntity& actor, glm::vec2& averagedNormal, bool& NormalGroundCheck)
+bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box& staticBox, glm::vec2& dynamicBoxVelocity, Actor& actor, glm::vec2& averagedNormal, bool& NormalGroundCheck)
 {
+
 	glm::vec2 contactPoint, contactNormal;
 	float contactTime = 0.0f;
 	if (DynamicRectVsRect(actor.mSprite.vertexData, deltaTime, staticBox, actor.velocity, contactPoint, contactNormal, contactTime, actor.mPosition))
@@ -129,12 +132,16 @@ bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box&
 		}
 
 		actor.velocity += contactNormal * glm::vec2(std::abs(actor.velocity.x), std::abs(actor.velocity.y)) * (1 - contactTime);
+		if (contactNormal.x < 0) {
+		
+		}
 		return true;
 	}
 	return false;
 }
 
-void CollisionUpdate(const std::vector<GameObject>& blocks, GameEntity& actor, bool& LeftWallHug, bool& RightWallHug, const float& deltaTime, bool& isGrounded) {
+void CollisionUpdate(const std::vector<GameObject>& blocks, Actor& actor, bool& LeftWallHug, bool& RightWallHug, const float& deltaTime, bool& isGrounded) {
+
 	static glm::vec2 averagedNormal(0.0f, 0.0f);
 	static bool NormalGroundCheck = false;
 	static bool BottomWallHug = false;
@@ -154,22 +161,40 @@ void CollisionUpdate(const std::vector<GameObject>& blocks, GameEntity& actor, b
 	RightWallHug = false;
 	BottomWallHug = false;
 	for (int i = 0; i < blocks.size(); i++) {
-		if (blocks[i].mSprite.vertexData.Position.x > A.x && blocks[i].mSprite.vertexData.Position.x < B.x && blocks[i].mSprite.vertexData.Position.y > A.y && blocks[i].mSprite.vertexData.Position.y < B.y && blocks[i].isCollidable == true) {
-			if (DynamicRectVsRect(actor.mSprite.vertexData, deltaTime, blocks[i].mSprite.vertexData, actor.velocity, contactPoint, contactNormal, contactTime, actor.mPosition)) {
-				colidedBlocks.push_back({ i, contactTime });
+		if (blocks[i].mSprite.vertexData.Position.x > A.x && blocks[i].mSprite.vertexData.Position.x < B.x && blocks[i].mSprite.vertexData.Position.y > A.y && blocks[i].mSprite.vertexData.Position.y < B.y && actor.isCollidable == true) {
+			if (!blocks[i].isDeathTrigger && blocks[i].isCollidable == true) {
+				if (DynamicRectVsRect(actor.mSprite.vertexData, deltaTime, blocks[i].mSprite.vertexData, actor.velocity, contactPoint, contactNormal, contactTime, actor.mPosition)) {
+					colidedBlocks.push_back({ i, contactTime });
+				}
+				if (blocks[i].mSprite.vertexData.Position.x == actor.mPosition.x + actor.mSprite.vertexData.Size.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !isGrounded) {
+					RightWallHug = RectVsRect(glm::vec2(actor.mPosition.x + actor.mSprite.vertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
+				}
+				if (blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x == actor.mPosition.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !isGrounded) {
+					LeftWallHug = RectVsRect(glm::vec2(actor.mPosition.x - actor.mSprite.vertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
+				} 
+				if (blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y == actor.mPosition.y && actor.mPosition.x < blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x && actor.mPosition.x + actor.mSprite.vertexData.Size.x > blocks[i].mSprite.vertexData.Position.x) {
+					BottomWallHug = RectVsRect(glm::vec2(actor.mPosition.x, actor.mPosition.y - actor.mSprite.vertexData.Size.y / 2), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
+				}
 			}
-			if (blocks[i].mSprite.vertexData.Position.x == actor.mPosition.x + actor.mSprite.vertexData.Size.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !isGrounded) {
-				RightWallHug = RectVsRect(glm::vec2(actor.mPosition.x + actor.mSprite.vertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
+			else if (blocks[i].isDeathTrigger) {
+				Box AABB;
+				AABB.Position = blocks[i].mTriggerAABBPos;
+				AABB.Size = blocks[i].mTriggerAABBSize;
+				if (DynamicRectVsRect(actor.mSprite.vertexData, deltaTime, AABB, actor.velocity, contactPoint, contactNormal, contactTime, actor.mPosition)) {
+					if (blocks[i].isCollidable) {
+						colidedBlocks.push_back({ i, contactTime });
+					}
+					actor.mDead = true;
+				}
+				if (blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y == actor.mPosition.y && actor.mPosition.x < blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x && actor.mPosition.x + actor.mSprite.vertexData.Size.x > blocks[i].mSprite.vertexData.Position.x) {
+					if (blocks[i].isCollidable) {
+						BottomWallHug = RectVsRect(glm::vec2(actor.mPosition.x, actor.mPosition.y - actor.mSprite.vertexData.Size.y / 2), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
+					}
+				}
 			}
-			if (blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x == actor.mPosition.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !isGrounded) {
-				LeftWallHug = RectVsRect(glm::vec2(actor.mPosition.x - actor.mSprite.vertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
-			} 
-			if (blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y == actor.mPosition.y && actor.mPosition.x < blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x && actor.mPosition.x + actor.mSprite.vertexData.Size.x > blocks[i].mSprite.vertexData.Position.x) {
-				BottomWallHug = RectVsRect(glm::vec2(actor.mPosition.x, actor.mPosition.y - actor.mSprite.vertexData.Size.y / 2), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
-			}
-
 		}
 	}
+
 	std::sort(colidedBlocks.begin(), colidedBlocks.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
 		return a.second < b.second;
 		});
@@ -184,8 +209,7 @@ void CollisionUpdate(const std::vector<GameObject>& blocks, GameEntity& actor, b
 	else {
 		isGrounded = false;
 	}
-
-
 	actor.mPosition += actor.velocity * deltaTime;
-	actor.mPosition = glm::vec2(float(std::round(actor.mPosition.x * 10000)) / 10000.0f, float(std::round(actor.mPosition.y * 10000)) / 10000.0f);
+
+	actor.mPosition = glm::vec2(float(std::round(actor.mPosition.x * 1000)) / 1000.0f, float(std::round(actor.mPosition.y * 1000)) / 1000.0f);
 }

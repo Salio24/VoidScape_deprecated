@@ -11,9 +11,7 @@
 
 
 Camera::Camera() : app_(nullptr) {
-	mEye = glm::vec3(0.0f, 0.0f, 0.0f);
-	mViewDirection = glm::vec3(0.0f, 0.0f, -1.0f);
-	mUpVector = glm::vec3(0.0f, 1.0f, 0.0f);
+
 }
 
 App& Camera::app() {
@@ -24,73 +22,51 @@ App& Camera::app() {
 }
 
 void Camera::Update(glm::vec2& actorVelocity, glm::vec2& actorScreenPosition, const float& deltaTime) {
-	if (!(actorScreenPosition.x > -0.2f && actorScreenPosition.x < 0.2f)) {
-		//mProjectionMatrix = glm::translate(mProjectionMatrix, glm::vec3(-app().mActor.velocity.x * app().deltaTime, 0.0f, 0.0f));
-		//mProjectionMatrix = glm::translate(mInitialProjectionMatrix, glm::vec3(-relativeActorPosition.x, 0.0f, 0.0f));
-	}
-
 	if (app().mActor.mPosition.x > 0.0f) {
-		//if (actorScreenPosition.x > 0.2f && Sign(actorVelocity.x) == 1) {
-		//	mProjectionMatrix = glm::translate(mProjectionMatrix, glm::vec3(-actorVelocity.x * deltaTime, 0.0f, 0.0f));
-		//	mUIModelMatrix = glm::translate(mUIModelMatrix, glm::vec3(actorVelocity.x * deltaTime, 0.0f, 0.0f));
-		//}
-		//if (actorScreenPosition.x < -0.2f && Sign(actorVelocity.x) == -1) {
-		//	mProjectionMatrix = glm::translate(mProjectionMatrix, glm::vec3(-actorVelocity.x * deltaTime, 0.0f, 0.0f));
-		//	mUIModelMatrix = glm::translate(mUIModelMatrix, glm::vec3(actorVelocity.x * deltaTime, 0.0f, 0.0f));
-		//}
-		if (int(actorVelocity.x) > 0.0f && mCameraVelocityTimerBuffer2 <= 0.f) {
-			mCameraVelocity.x += (actorVelocity.x * deltaTime) / 5.0f;
-			if (mCameraVelocity.x > 350.0f) {
-				mCameraVelocity.x = 350.0f;
+		if (int(actorVelocity.x) > 0.0f && mCameraOffsetTimerBuffer2 <= 0.f) {
+			mCameraOffset.x += (actorVelocity.x * deltaTime) / 5.0f;
+			if (mCameraOffset.x > 350.0f) {
+				mCameraOffset.x = 350.0f;
 			}
-			mCameraVelocityTimerBuffer = mCameraVelocityTimeBuffer;
-			//mProjectionMatrix = glm::translate(mInitialProjectionMatrix, glm::vec3(-(app().mActor.mPosition.x - 960.0f + mCameraVelocity.x), 0.0f, 0.0f));
+			mCameraOffsetTimerBuffer = mCameraOffsetTimeBuffer;
 		}
-		else if (int(actorVelocity.x) < 0.0f && mCameraVelocityTimerBuffer <= 0.f) {
-			mCameraVelocity.x += (actorVelocity.x * deltaTime) / 5.0f;
-			if (mCameraVelocity.x < -350.0f) {
-				mCameraVelocity.x = -350.0f;
+		else if (int(actorVelocity.x) < 0.0f && mCameraOffsetTimerBuffer <= 0.f) {
+			mCameraOffset.x += (actorVelocity.x * deltaTime) / 5.0f;
+			if (mCameraOffset.x < -350.0f) {
+				mCameraOffset.x = -350.0f;
 			}
-			mCameraVelocityTimerBuffer2 = mCameraVelocityTimeBuffer2;
-			//mProjectionMatrix = glm::translate(mInitialProjectionMatrix, glm::vec3(-(app().mActor.mPosition.x - 960.0f + mCameraVelocity.x), 0.0f, 0.0f));
+			mCameraOffsetTimerBuffer2 = mCameraOffsetTimeBuffer2;
 		}
-			//mProjectionMatrix = glm::translate(mInitialProjectionMatrix, glm::vec3(-(app().mActor.mPosition.x - 960.0f + mCameraVelocity.x), 0.0f, 0.0f));
 
-		if (mCameraVelocityTimerBuffer > 0.0f) {
-			mCameraVelocityTimerBuffer -= deltaTime;
+		if (mCameraOffsetTimerBuffer > 0.0f) {
+			mCameraOffsetTimerBuffer -= deltaTime;
 		}
-		if (mCameraVelocityTimerBuffer2 > 0.0f) {
-			mCameraVelocityTimerBuffer2 -= deltaTime;
+		if (mCameraOffsetTimerBuffer2 > 0.0f) {
+			mCameraOffsetTimerBuffer2 -= deltaTime;
 		}
 
 		
 		else {
-			if (mCameraVelocity.x > 0.0f && mCameraVelocityTimerBuffer <= 0.0f && mCameraVelocityTimerBuffer2 <= 0.0f) {
-				if (mCameraVelocity.x > 0.25f) {
-					mCameraVelocity.x -= 36.0f * deltaTime;
+			if (mCameraOffset.x > 0.0f && mCameraOffsetTimerBuffer <= 0.0f && mCameraOffsetTimerBuffer2 <= 0.0f) {
+				if (mCameraOffset.x > 0.25f) {
+					mCameraOffset.x -= 36.0f * deltaTime;
 				}
 				else {
-					mCameraVelocity.x = 0;
+					mCameraOffset.x = 0;
 				}
 			}
-			else if (mCameraVelocity.x < 0.0f && mCameraVelocityTimerBuffer <= 0.0f && mCameraVelocityTimerBuffer2 <= 0.0f) {
-				if (mCameraVelocity.x < -0.25f) {
-					mCameraVelocity.x += 36.0f * deltaTime;
+			else if (mCameraOffset.x < 0.0f && mCameraOffsetTimerBuffer <= 0.0f && mCameraOffsetTimerBuffer2 <= 0.0f) {
+				if (mCameraOffset.x < -0.25f) {
+					mCameraOffset.x += 36.0f * deltaTime;
 				}
 				else {
-					mCameraVelocity.x = 0;
+					mCameraOffset.x = 0;
 				}
 			}
-			//mProjectionMatrix = glm::translate(mInitialProjectionMatrix, glm::vec3(-(app().mActor.mPosition.x - 960.0f), 0.0f, 0.0f));
 		}
-		mProjectionMatrix = glm::translate(mInitialProjectionMatrix, glm::vec3(-(app().mActor.mPosition.x - 800.0f + mCameraVelocity.x), 0.0f, 0.0f));
-		mUIModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3((app().mActor.mPosition.x - 800.0f + mCameraVelocity.x), 0.0f, 0.0f));
-		//std::cout << mCameraVelocity.x << ", " << actorVelocity.x << std::endl;
+		mProjectionMatrix = glm::translate(mInitialProjectionMatrix, glm::vec3(-(app().mActor.mPosition.x - 800.0f + mCameraOffset.x), 0.0f, 0.0f));
+		mUIModelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3((app().mActor.mPosition.x - 800.0f + mCameraOffset.x), 0.0f, 0.0f));
 	}
-}
-
-glm::mat4 Camera::GetViewMatrix() const {
-	return glm::lookAt(mEye, mEye + mViewDirection, mUpVector);
 }
 
 void Camera::SetProjectionMatrix() {
@@ -100,13 +76,6 @@ void Camera::SetProjectionMatrix() {
 
 glm::mat4 Camera::GetProjectionMatrix() const {
 	return mProjectionMatrix;
-}
-void Camera::SetMousePosstition(double mouseX, double mouseY) {
-	mMousePossition = glm::vec2(mouseX / (float)app().mWindowWidth * 320.0f,mouseY / (float)app().mWindowHeight * 180.0f);
-}
-
-glm::vec2 Camera::GetMousePossition() const {
-	return mMousePossition;
 }
 
 

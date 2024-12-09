@@ -8,11 +8,7 @@ GameEntity::~GameEntity() {
 
 }
 
-void GameEntity::Transform() {
-
-}
-
-void GameEntity::Render() {
+void GameEntity::Update() {
 
 }
 

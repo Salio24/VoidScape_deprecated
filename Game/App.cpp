@@ -9,7 +9,7 @@
 #include <glm/gtx/norm.hpp>
 #include <random>
 #include <glm/ext/matrix_transform.hpp>
-#include <glm/gtx/exterior_product.hpp> 
+#include <glm/gtx/exterior_product.hpp>
 
 App::App() : mAnimationHandler(mTextureHandler) {
 	StartUp();
@@ -42,7 +42,7 @@ void App::StartUp() {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 	}
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
@@ -88,68 +88,91 @@ void App::PostStartUp() {
 	glUseProgram(mGraphicsPipelineShaderProgram);
 
 	mBatchRenderer.StartUp(mGraphicsPipelineShaderProgram);
+
+	SDL_Surface* tileset = mTextureHandler.LoadSurface("assets/Level/tiles128up.png");
+	
+	mTextureHandler.InitTextureArray(GL_RGBA8, 512, 512, 1024);
+
+	uint32_t whiteTextureData[128 * 128];
+	for (int i = 0; i < 128 * 128; i++) {
+		whiteTextureData[i] = 0xFFFFFFFF; // RGBA: White
+	}
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 128, 128, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
+	mTextureHandler.layersUsed[0]++;
+
+	std::vector<SDL_Surface*> tiles = mTextureHandler.CutTileset(tileset, 128, 128);
+	for (int i = 0; i < tiles.size(); i++) {
+		mTextureHandler.LoadTexture(tiles[i], GL_RGBA, mTextureHandler.layersUsed[0], 0);
+	}
+
+	mAnimationHandler.Init(512);
+
+	mTextOut.Init(mTextureHandler, "assets/Level/Text.png");
+
+	Mix_AllocateChannels(16);
+	mAudioHandler.LoadSounds();
+}
+void App::LoadGame() {
+	mActor.velocity = glm::vec2(0.0f, 0.0f);
+
+	mActor.mDead = false;
+	mActor.isConsumedByVoid = false;
+	mActor.isSucked = false;
+	mActor.isSuckedPortal = false;
+	mActor.mEscaped = false;
+	mActor.flyAngle = 0.0f;
+	mActor.flyAnglePortal = 0.0f;
+	mActor.flyAngleTarget = -1.0f;
+	mActor.flyAngleTargetPortal = -1.0f;
+	mGameStarted = false;
+	mBlackHole.isBorn = false;
+	mBlackHole.loopTimerOneShot = false;
+	mBlackHole.birthTimerOneShot = false;
+	mBlackHole.idleVolume = 0;
+	Mix_HaltChannel(13);
+	mBlackHole.AABBSize.x = 100.0f;
+	mLevel.mBlocks.clear();
+	mMovementHandler.lookDirection = LookDirections::RIGHT;
+	mCamera.mCameraOffset = glm::vec2(0.0f, 0.0f);
+	mActor.mDeadSoundOneShot = true;
+	mStateMachine.deadAnimOneShot = true;
+	mStateMachine.deadAnimDone = false;
+	Mix_HaltMusic();
+
+	titleScreenAlpha = 0.0f;
+	titleScreenMusicVolume = 128;
+
+	titleScreenAlphaTimer = 0.0f;
+
+	titleScreenMessageTimer = 0.0f;
+
+	startMessageTimer = 0.0f;
+
+	titleScreenMusicVolumeTimer = 0.0f;
+
 	mLevel.LoadLevelJson("levels/GameLevels/32p/Level_1.json");
 	mLevel.BuildLevel();
 
 	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
 		mLevel.mBlocks[i].Update();
 	}
+	mActor.mSprite.vertexData.Position = glm::vec2(370.0f, 350.0f);
 
-	mActor.mSprite.vertexData.Position = glm::vec2(12000.0f, 970.0f);
-	mActor.mSprite.vertexData.Size = glm::vec2(25.0f, 32.0f);
+	mActor.isVisible = true;
+	mActor.isCollidable = true;
 
 	mActor.mPosition = mActor.mSprite.vertexData.Position;
 
-	SDL_Surface* tileset = mTextureHandler.LoadSurface("assets/Level/tiles32.png");
+	mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
 
-	mTextureHandler.InitTextureArray(GL_RGBA8, 32, 32, 1024);
+	mEscapePortal.mSprite.vertexData.Size = mAnimationHandler.EscapePortalAnimation.Size * mEscapePortal.sizeMultiplier;
 
-	uint32_t whiteTextureData[32 * 32];
-	for (int i = 0; i < 32 * 32; i++) {
-		whiteTextureData[i] = 0xFFFFFFFF; // RGBA: White
-	}
-	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 32, 32, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
-	mTextureHandler.layersUsed[0]++;
-
-	std::vector<SDL_Surface*> tiles = mTextureHandler.CutTileset(tileset, 32, 32);
-	for (int i = 0; i < tiles.size(); i++) {
-		mTextureHandler.LoadTexture(tiles[i], GL_RGBA, mTextureHandler.layersUsed[0], 0);
-		//std::cout << "Loading texture into Texture2DArray on layer:" << i + 1 << std::endl;
-	}
-
-	mAnimationHandler.Init();
-
-	mAudioHandler.LoadSounds();
-
-	int maxCombinedUnits, maxFragmentUnits, maxVertexUnits, maxArrayLayers;
-
-	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxCombinedUnits);
-	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxFragmentUnits);
-	glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &maxVertexUnits);
-	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxArrayLayers);
-
-	//printf("Max Combined Texture Units: %d\n", maxCombinedUnits);
-	//printf("Max Fragment Texture Units: %d\n", maxFragmentUnits);
-	//printf("Max Vertex Texture Units: %d\n", maxVertexUnits);
-	//printf("Max Array Texture Layers: %d\n", maxArrayLayers);
-
-	int activeTextureUnit;
-	glGetIntegerv(GL_ACTIVE_TEXTURE, &activeTextureUnit);
-	//printf("Active texture unit: GL_TEXTURE%d\n", activeTextureUnit - GL_TEXTURE0);
-
-	int boundTexture;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D_ARRAY, &boundTexture);
-	//printf("Bound texture ID to GL_TEXTURE0: %d\n", boundTexture);
-
-	int samplerValue;
-	int location = glGetUniformLocation(mGraphicsPipelineShaderProgram, "uTextures");
-	glGetUniformiv(mGraphicsPipelineShaderProgram, location, &samplerValue);
-	//printf("Uniform 'ourTextures' is set to texture unit: %d\n", samplerValue);
+	Mix_PlayMusic(mAudioHandler.IntroMusic, 0);
 }
+
 
 void App::MainLoop() {
 	SDL_WarpMouseInWindow(mWindow, mWindowWidth / 2, mWindowHeight / 2);
-	//SDL_SetWindowRelativeMouseMode(mWindow, true);
 	tp1 = std::chrono::system_clock::now();
 	tp2 = std::chrono::system_clock::now();
 	while (!mQuit) {
@@ -164,8 +187,6 @@ void App::MainLoop() {
 
 		glViewport(0, 0, mWindowWidth, mWindowHeight);
 		glClearColor((14.0f / 256.0f), (7.0f / 256.0f), (27.0f / 256.0f), 1.0f);
-		//glClearColor((18.0f / 256.0f), (14.0f / 256.0f), (40.0f / 256.0f), 1.0f);
-		//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 		Update();
 
@@ -188,18 +209,16 @@ void App::Update() {
 		auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
 		auto fps = frameCount * 1000.0 / elapsedTime;
 
-		//std::cout << "FPS: " << fps << std::endl;
+		std::cout << "FPS: " << fps << std::endl;
 
 		frameCount = 0;
 		lastTime = currentTime;
 	}
-	//std::cout << deltaTime << std::endl;
 	static int i = 0;
 	if (i < 20) {
 		deltaTimeBuffer += deltaTimeRaw;
 	}
 	if (i == 20) {
-		//deltaTime = deltaTimeBuffer / 20;
 		deltaTimeBuffer = 0;
 		i = 0;
 	}
@@ -209,445 +228,153 @@ void App::Update() {
 
 	tp1 = tp2;
 
-	mMovementHandler.Update(deltaTime);
+	if (mGameStarted == false && mActor.velocity.x != 0.0f) {
+		Mix_HaltMusic();
+		mGameStarted = true;
+	}
 
-	CollisionUpdate(mLevel.mBlocks, mActor, mMovementHandler.LeftWallHug, mMovementHandler.RightWallHug, deltaTime, mMovementHandler.isGrounded);
+	if (mGameStarted) {
+		if (Mix_PlayingMusic() == 0)
+		{
+			Mix_PlayMusic(mAudioHandler.LoopMusic, 0);
+		}
+	}
+	else {
+		startMessageTimer += deltaTime;
+		if (startMessageTimer > startMessageTime) {
+			startMessageTimer = 0.0f;
+		}
+		if (startMessageTimer >= 1.0f) {
+			mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 470.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
+				static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[5], mCamera.mUIModelMatrix);
+		}
+	}
+
+	mMovementHandler.Update(deltaTime, mActor);
 
 	mActor.Update();
+	if (mGameStarted) {
+		mBlackHole.Update(mLevel.mBlocks, mActor, deltaTime, mAnimationHandler.BlackHoleBirthAnimation, mAnimationHandler.BlackHoleLoopAnimation, mAudioHandler.BlackHoleBorn, mAudioHandler.ConsumedByVoid, mAudioHandler.BlackHoleIdle);
+		mBatchRenderer.DrawSeperatly(mBlackHole.mSprite.vertexData.Position, mBlackHole.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
+			mBlackHole.mSprite.vertexData.TextureIndex, mBlackHole.AnimationSize, mBlackHole.mSprite.vertexData.TexturePosition, mBlackHole.mModelMatrix);
+	}
+
+	if (mActor.mPosition.y < -500.0f) {
+		if (!mActor.mDead) {
+			mActor.velocity = glm::vec2(0.0f, 0.0f);
+			mActor.isConsumedByVoid = true;
+			mActor.mDead = true;
+		}
+	}
+
+	if (mActor.mDead) {
+		if (mActor.mDeadSoundOneShot) {
+			Mix_PlayChannel(14, mAudioHandler.FellDown, 0);
+			mActor.mDeadSoundOneShot = false;
+		}
+	}
+
+
+	CollisionUpdate(mLevel.mBlocks, mActor, mMovementHandler.LeftWallHug, mMovementHandler.RightWallHug, deltaTime, mMovementHandler.isGrounded);
 	mCamera.Update(mActor.velocity, mActor.mScreenPosition, deltaTime);
 	mActor.mScreenPosition = mCamera.GetProjectionMatrix() * glm::vec4(mActor.mPosition.x + mActor.mSprite.vertexData.Size.x / 2, mActor.mPosition.y + mActor.mSprite.vertexData.Size.y / 2, 0.0f, 1.0f);
 
 	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
 
-	if (mActor.isWallMountableR && mMovementHandler.RightWallHug) {
-		mBatchRenderer.DrawInBatch(glm::vec2(600.0f , 540.0f), glm::vec2(20.0f, 20.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-	}
-	if (mActor.isWallMountableL && mMovementHandler.LeftWallHug) {
-		mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 540.0f), glm::vec2(20.0f, 20.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-	}
-	if (mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)]) {
-		mBatchRenderer.DrawInBatch(glm::vec2(600.0f, 810.0f), glm::vec2(20.0f, 20.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-	}
-	if (mMovementHandler.KeyboadStates[static_cast<int>(MovementState::SPACE)]) {
-		mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 810.0f), glm::vec2(20.0f, 20.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
-	}
-	if (mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)]) {
-		mBatchRenderer.DrawInBatch(glm::vec2(640.0f, 810.0f), glm::vec2(20.0f, 20.0f), glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-	}
-	if (mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_UP)]) {
-		mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 830.0f), glm::vec2(20.0f, 20.0f), glm::vec4(0.5f, 0.0f, 1.0f, 1.0f));
-	}
-	if (mMovementHandler.KeyboadStates[static_cast<int>(MovementState::MOVE_DOWN)]) {
-		mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 790.0f), glm::vec2(20.0f, 20.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f));
-	}
-	if (mMovementHandler.KeyboadStates[static_cast<int>(MovementState::DUCK)]) {
-		mBatchRenderer.DrawInBatch(glm::vec2(620.0f, 750.0f), glm::vec2(20.0f, 20.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-	}
-	if (mMovementHandler.isGrounded) {
-		mBatchRenderer.DrawInBatch(glm::vec2(80.0f, 900.0f), glm::vec2(20.0f, 20.0f), glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-	}
-
-	mBatchRenderer.EndBatch();
-	mBatchRenderer.Flush(mCamera.mUIModelMatrix);
-
-
-	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
-	int j = 0;
+	// buffer of block id that are being sucked into the black hole and visible
+	std::vector<int> flyingBlocks;
 
 	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
-		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x - 80.0f)
-			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x + 2000.0f) && mLevel.mBlocks[i].isVisible == false) {
-			//mBatchRenderer.DrawInBatch(mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size, glm::vec4(1.0f, 0.0f, 0.0f, 0.2f));
+		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
+			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f) && mLevel.mBlocks[i].isVisible == false) {
 		}
-		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x - 80.0f)
-			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x + 2000.0f) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == false) {
-		mBatchRenderer.DrawInBatch(mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size, static_cast<uint32_t>(mLevel.mBlocks[i].mSprite.vertexData.TextureIndex));
-		j++;
+		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
+			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == false) {
+			mBatchRenderer.DrawInBatch(mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size, static_cast<uint32_t>(mLevel.mBlocks[i].mSprite.vertexData.TextureIndex), glm::vec2(0.25f, 0.25f));
+		}
+		else if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
+			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == true) {
+			flyingBlocks.push_back(i);
 		}
 	}
-
-	//std::cout << j << std::endl;
 
 	mBatchRenderer.EndBatch();
 	mBatchRenderer.Flush();
 
-	glm::vec4 temp_color1 = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
 
-	//mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, temp_color, mCamera.GetProjectionMatrix(), mActor.mModelMatrix);
+	mBatchRenderer.EndBatch();
+	mBatchRenderer.Flush();
 
-	//sound vvv
-
-
-
-	//sound ^^^
-
+	mEscapePortal.Update(mAnimationHandler.EscapePortalAnimation, deltaTime, mActor, mAudioHandler.PortalEscape, mAudioHandler.PortalIdle);
+	mBatchRenderer.DrawSeperatly(mEscapePortal.mSprite.vertexData.Position, mEscapePortal.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
+		mEscapePortal.mSprite.vertexData.TextureIndex, mEscapePortal.AnimationSize, mEscapePortal.mSprite.vertexData.TexturePosition, mEscapePortal.mModelMatrix);
 
 
-	//black hole code vvv
-	// needs refactoring and optimization, this is just a prototype version
-	
-	glm::vec2 voidPos = glm::vec2(200.0f, 500.0f);
-	static glm::vec2 range = glm::vec2(100.0f, 1080.f);
-
-	//range.x += 144.0f * deltaTime;
-
-	//mBatchRenderer.DrawSeperatly(glm::vec2(0.0f, 0.0f), range, glm::vec4(1.0f, 1.0f, 1.0f, 0.02f), mCamera.GetProjectionMatrix());
-	mBatchRenderer.DrawSeperatly(voidPos, glm::vec2(40.0f, 40.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), mCamera.GetProjectionMatrix());
-
-	std::random_device rd;
-	std::mt19937 gen(rd());
-	std::uniform_real_distribution<> dis(1.0f, 5.0f);
-
-	if (RectVsRect(glm::vec2(0.0f, 0.0f), range, mActor.mPosition, mActor.mSprite.vertexData.Size) && mActor.isSucked == false) {
-		//mActor.isSucked = true;
-		//mMovementHandler.debugMove = true;
-		//mActor.flyDirectionNormalized = glm::normalize(voidPos - mActor.mPosition);
-		//std::cout << glm::to_string(mActor.flyDirectionNormalized) << std::endl;
-		//mActor.velocity = mActor.flyDirectionNormalized * (float)dis(gen);
+	for (int i = 0; i < flyingBlocks.size(); i++) {
+		mBatchRenderer.DrawSeperatly(mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.Position, mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
+			static_cast<uint32_t>(mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.TextureIndex), glm::vec2(0.25f, 0.25f), glm::vec2(0.0f, 0.0f), mLevel.mBlocks[flyingBlocks[i]].mModelMatrix, false);
 	}
 
-	std::vector<std::pair<int, float>> affectedBlocks;
+	mStateMachine.Update(mMovementHandler, mAnimationHandler, mAudioHandler, mActor, deltaTime);
+	if (mActor.isVisible == true) {
+	mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mStateMachine.mCurrentActorDrawSize, mCamera.GetProjectionMatrix(),
+		mStateMachine.mCurrentActorTextureIndex, mStateMachine.mCurrentActorTextureSize, mStateMachine.mCurrentActorTexturePosition, mActor.mModelMatrix, mStateMachine.mActorFlipped);	
+	}
 
-	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
-		if (RectVsRect(glm::vec2(0.0f, 0.0f), range, mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == false) {
-			affectedBlocks.push_back({i , glm::distance2(voidPos, mLevel.mBlocks[i].mSprite.vertexData.Position)});
+	TitleScreenUpdate();
+}
+
+void App::TitleScreenUpdate() {
+	if (mActor.mDead || mActor.mEscaped || mActor.isConsumedByVoid) {
+		mBatchRenderer.DrawSeperatly(glm::vec2(0.0f, 0.0f), glm::vec2(1920.0f, 1080.0f), glm::vec4((14.0f / 256.0f), (7.0f / 256.0f), (27.0f / 256.0f), titleScreenAlpha), mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix);
+		if (titleScreenAlphaTimer > titleScreenAlphaTime && titleScreenAlpha < 1.0f) {
+			titleScreenAlpha += 0.004f;
+			titleScreenAlphaTimer = 0.0f;
 		}
-	}
-
-	std::sort(affectedBlocks.begin(), affectedBlocks.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
-		return a.second < b.second;
-		});
-
-	if (mActor.isSucked == true) {
-		mActor.velocity += mActor.velocity * 2.16f * deltaTime;
-
-		glm::vec2 center = glm::vec2(mActor.mSprite.vertexData.Position.x + mActor.mSprite.vertexData.Size.x / 2, mActor.mSprite.vertexData.Position.y + mActor.mSprite.vertexData.Size.y / 2);
-
-		// Compute the dot product
-		float dot = glm::dot(mActor.flyDirectionNormalized, glm::vec2(-1.0f, 0.0f));
-
-		// Compute the magnitudes of both vectors
-		float magV1 = glm::length(glm::vec2(-1.0f, 0.0f));
-		float magV2 = glm::length(mActor.flyDirectionNormalized);
-
-		// Compute the cosine of the angle
-		float cosTheta = dot / (magV1 * magV2);
-
-		// Clamp the value to avoid numerical errors leading to invalid values for acos
-		cosTheta = glm::clamp(cosTheta, -1.0f, 1.0f);
-
-		// Calculate the angle in radians
-		mActor.flyAngleTarget = glm::acos(cosTheta);
-
-
-		// Step 1: Translate to origin
-		mActor.mModelMatrix = glm::translate(mActor.mModelMatrix, glm::vec3(center, 0.0f));
-
-		float crossProduct = glm::cross(mActor.flyDirectionNormalized, glm::vec2(-1.0f, 0.0f));
-
-		if (crossProduct > 0) {
-			mActor.mModelMatrix = glm::rotate(mActor.mModelMatrix, -mActor.flyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+		if (titleScreenAlpha > 1.0f) {
+			titleScreenAlpha = 1.0f;
 		}
-		else if (crossProduct < 0) {
-			mActor.mModelMatrix = glm::rotate(mActor.mModelMatrix, mActor.flyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+		titleScreenAlphaTimer += deltaTime;
+
+		if (titleScreenMusicVolumeTimer > titleScreenMusicVolumeTime && titleScreenMusicVolume > 0) {
+			titleScreenMusicVolume -= 1;
+			titleScreenMusicVolumeTimer = 0.0f;
 		}
-
-		// Step 2: Apply rotation
-		
-		// Step 3: Translate back
-		mActor.mModelMatrix = glm::translate(mActor.mModelMatrix, glm::vec3(-center, 0.0f));
+		if (titleScreenMusicVolume < 0) {
+			titleScreenMusicVolume = 0;
+		}
+		titleScreenMusicVolumeTimer += deltaTime;
 	}
 
-	if (mActor.flyAngle < mActor.flyAngleTarget) {
-		mActor.flyAngle += 0.1f * deltaTime;
-	}
+	Mix_VolumeMusic(titleScreenMusicVolume);
 
-	for (int i = 0; i < affectedBlocks.size(); i++) {
-		mLevel.mBlocks[affectedBlocks[i].first].isVisible = true;
-		mLevel.mBlocks[affectedBlocks[i].first].isCollidable = false;
-		mLevel.mBlocks[affectedBlocks[i].first].isSucked = true;
-		mLevel.mBlocks[affectedBlocks[i].first].flyDirectionNormalized = glm::normalize(voidPos - mLevel.mBlocks[affectedBlocks[i].first].mSprite.vertexData.Position);
-		mLevel.mBlocks[affectedBlocks[i].first].tempVelocity = mLevel.mBlocks[affectedBlocks[i].first].flyDirectionNormalized * (float)dis(gen);
-	}
-
-	float voidTime = 0.01f;
-	static float voidTimer = 0.0f;
-	static int index1 = 0;
-	static int rot = 0;
-
-	voidTimer += deltaTime;
-
-	if (voidTimer > voidTime) {
-		rot += 1;
-
-
-		voidTimer = 0.0f;
-	}
-
-	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
-		if (mLevel.mBlocks[i].isSucked == true && mLevel.mBlocks[i].isVisible == true) {
-			mLevel.mBlocks[i].isCollidable = false;
-			mLevel.mBlocks[i].mSprite.vertexData.Position = mLevel.mBlocks[i].mSprite.vertexData.Position + mLevel.mBlocks[i].tempVelocity * deltaTime;
-			mLevel.mBlocks[i].tempVelocity += mLevel.mBlocks[i].tempVelocity * 2.16f * deltaTime;
-			// may need to use dynamic rectvsrect
-			if (RectVsRect(glm::vec2(voidPos.x, voidPos.y), glm::vec2(40.0f, 40.0f), mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size)) {
-				mLevel.mBlocks[i].isVisible = false;
+	if (titleScreenAlpha >= 1.0f) {
+		titleScreenMessageTimer += deltaTime;
+		if (titleScreenMessageTimer > titleScreenMessageTime) {
+			titleScreenMessageTimer = 0.0f;
+		}
+		if (titleScreenMessageTimer >= 1.0f) {
+			mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 240.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
+				static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[4], mCamera.mUIModelMatrix);
 			}
-		}
-	}
-
-	std::uniform_real_distribution<> dis2(10.0f, 30.0f);
-
-	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
-		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x - 80.0f)
-			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraVelocity.x + 2000.0f) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == true) {
-
-
-			glm::mat4 model = glm::mat4(1.0f);
-
-			glm::vec2 center = glm::vec2(mLevel.mBlocks[i].mSprite.vertexData.Position.x + mLevel.mBlocks[i].mSprite.vertexData.Size.x / 2, mLevel.mBlocks[i].mSprite.vertexData.Position.y + mLevel.mBlocks[i].mSprite.vertexData.Size.y / 2);
-
-			// Compute the dot product
-			float dot = glm::dot(mLevel.mBlocks[i].flyDirectionNormalized, glm::vec2(-1.0f, 0.0f));
-
-			// Compute the magnitudes of both vectors
-			float magV1 = glm::length(glm::vec2(-1.0f, 0.0f));
-			float magV2 = glm::length(mLevel.mBlocks[i].flyDirectionNormalized);
-
-			// Compute the cosine of the angle
-			float cosTheta = dot / (magV1 * magV2);
-
-			// Clamp the value to avoid numerical errors leading to invalid values for acos
-			cosTheta = glm::clamp(cosTheta, -1.0f, 1.0f);
-
-			// Calculate the angle in radians
-			mLevel.mBlocks[i].flyAngleTarget = glm::acos(cosTheta);
-
-
-			// Step 1: Translate to origin
-			model = glm::translate(model, glm::vec3(center, 0.0f));
-
-			float crossProduct = glm::cross(mLevel.mBlocks[i].flyDirectionNormalized, glm::vec2(-1.0f, 0.0f));
-
-			if (crossProduct > 0) {
-				model = glm::rotate(model, -mLevel.mBlocks[i].flyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+			if (mActor.isConsumedByVoid && !mActor.mDead) {
+				mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
+					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[0], mCamera.mUIModelMatrix);
 			}
-			else if (crossProduct < 0) {
-				model = glm::rotate(model, mLevel.mBlocks[i].flyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
+			else if (mActor.isConsumedByVoid && mActor.mDead) {
+				mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
+					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[2], mCamera.mUIModelMatrix);
 			}
-
-			// Step 2: Apply rotation
-
-			// Step 3: Translate back
-			model = glm::translate(model, glm::vec3(-center, 0.0f));
-
-			if (mLevel.mBlocks[i].flyAngle < mLevel.mBlocks[i].flyAngleTarget) {
-				mLevel.mBlocks[i].flyAngle += 1.0f * deltaTime;
+			else if (!mActor.isConsumedByVoid && mActor.mDead) {
+				mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
+					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[3], mCamera.mUIModelMatrix);
 			}
-
-
-			mBatchRenderer.DrawSeperatly(mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
-				static_cast<uint32_t>(mLevel.mBlocks[i].mSprite.vertexData.TextureIndex), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 0.0f), model, false);
+			else if (mActor.mEscaped) {
+				mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
+					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[1], mCamera.mUIModelMatrix);
 		}
 	}
-
-	if (rot == 360) {
-		rot = 0;
-	}
-
-
-	//black hole code ^^^
-
-	
-
-	bool flipped;
-
-	switch (mMovementHandler.lookDirection) {
-	case LookDirections::LEFT:
-		flipped = true;
-		break;
-	case LookDirections::RIGHT:
-		flipped = false;
-		break;
-	}
-	//std::cout << mAnimationHandler.RunAnimation.index << std::endl;
-
-
-	static bool runAnimOneShot = true;
-	static bool runsound;
-	static float FallVolumeTime = 0.1f;
-	static float FallVolumeTimer = 0.0f;
-	static int FallVolume = 1;
-	switch (mMovementHandler.currentPlayerState) {
-	case PlayerStates::RUNNING:
-		if (runAnimOneShot) {
-			mAnimationHandler.RunAnimation.AnimationTimer = std::chrono::high_resolution_clock::now();
-			mAnimationHandler.RunAnimation.SingleFrameTimer = std::chrono::high_resolution_clock::now();
-			runAnimOneShot = false;
-		}
-		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - mAnimationHandler.RunAnimation.AnimationTimer).count() > mAnimationHandler.RunAnimation.AnimationTime + deltaTime * 1000) {
-			mAnimationHandler.RunAnimation.AnimationTimer = std::chrono::high_resolution_clock::now();
-			mAnimationHandler.RunAnimation.index = 0;
-		}
-		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - mAnimationHandler.RunAnimation.SingleFrameTimer).count() > mAnimationHandler.RunAnimation.SingleFrameTime + deltaTime * 1000) {
-			mAnimationHandler.RunAnimation.SingleFrameTimer = std::chrono::high_resolution_clock::now();
-			mAnimationHandler.RunAnimation.index++;
-		}
-		if (mAnimationHandler.RunAnimation.index > mAnimationHandler.RunAnimation.AnimationTextureIndexes.size() - 1) {
-			mAnimationHandler.RunAnimation.index = 0;
-		}
-		if ((mAnimationHandler.RunAnimation.index == 1 || mAnimationHandler.RunAnimation.index == 2 || mAnimationHandler.RunAnimation.index == 4 || mAnimationHandler.RunAnimation.index == 5) && runsound == false) {
-			runsound = true;
-		}
-
-		//std::cout << "runsound: " << runsound << std::endl;
-
-		if ((mAnimationHandler.RunAnimation.index == 3 || mAnimationHandler.RunAnimation.index == 0) && runsound == true) {
-			runsound = false;
-			mAudioHandler.PlayNextStepSound();
-		}
-
-		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
-		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.RunAnimation.Size* mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
-			mAnimationHandler.RunAnimation.AnimationTextureIndexes[mAnimationHandler.RunAnimation.index], mAnimationHandler.RunAnimation.Size, mAnimationHandler.RunAnimation.TexturePosition, mActor.mModelMatrix, flipped);
-		//std::cout << "RUN" << std::endl;
-		break;
-	case PlayerStates::JUMPING:
-		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
-		//mActor.mSprite.vertexData.Size = mAnimationHandler.JumpAnimation.Size * mActor.mSizeMultiplier;
-		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.JumpAnimation.Size * mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
-			mAnimationHandler.JumpAnimation.AnimationTextureIndexes[0], mAnimationHandler.JumpAnimation.Size, mAnimationHandler.JumpAnimation.TexturePosition, mActor.mModelMatrix, flipped);
-		if (mMovementHandler.CheckPlayerStateChange()) {
-			Mix_PlayChannel(2, mAudioHandler.Jump, 0);
-		}
-		mAnimationHandler.RunAnimation.index = 0;
-		runAnimOneShot = true;
-		break;
-	case PlayerStates::DOUBLE_JUMPING:
-		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
-		//mActor.mSprite.vertexData.Size = mAnimationHandler.JumpAnimation.Size * mActor.mSizeMultiplier;
-		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.JumpAnimation.Size * mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
-			mAnimationHandler.JumpAnimation.AnimationTextureIndexes[0], mAnimationHandler.JumpAnimation.Size, mAnimationHandler.JumpAnimation.TexturePosition, mActor.mModelMatrix, flipped);
-		//std::cout << "JUMP" << std::endl;
-		if (mMovementHandler.CheckPlayerStateChange()) {
-			Mix_PlayChannel(3, mAudioHandler.DoubleJump, 0);
-		}
-		mAnimationHandler.RunAnimation.index = 0;
-		runAnimOneShot = true;
-		break;
-	case PlayerStates::FALLING:
-		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
-		//mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
-		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.FallAnimation.Size* mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
-			mAnimationHandler.FallAnimation.AnimationTextureIndexes[0], mAnimationHandler.FallAnimation.Size, mAnimationHandler.FallAnimation.TexturePosition, mActor.mModelMatrix, flipped);
-		if (!Mix_Playing(4)) {
-			Mix_PlayChannel(4, mAudioHandler.WindSoft, 0);
-		}
-
-		if (FallVolumeTimer >= FallVolumeTime) {
-			FallVolumeTimer = 0.0f;
-			FallVolume += 10;
-			Mix_Volume(4, FallVolume);
-		}
-		else {
-			FallVolumeTimer += deltaTime;
-		}
-		//std::cout << "FALL" << std::endl;
-		mAnimationHandler.RunAnimation.index = 0;
-		runAnimOneShot = true;
-		break;
-	case PlayerStates::SLIDING:
-		mActor.mSprite.vertexData.Size = mAnimationHandler.SlideAnimation.Size * mActor.mSizeMultiplier;
-		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
-			mAnimationHandler.SlideAnimation.AnimationTextureIndexes[0], mAnimationHandler.SlideAnimation.Size, mAnimationHandler.SlideAnimation.TexturePosition, mActor.mModelMatrix, flipped);
-		//std::cout << "SLIDE" << std::endl;
-		if (!Mix_Playing(5)) {
-			Mix_PlayChannel(5, mAudioHandler.Slide, 0);
-		}
-		mAnimationHandler.RunAnimation.index = 0;
-		runAnimOneShot = true;
-		break;
-	case PlayerStates::SLAMMING:
-		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
-		//mActor.mSprite.vertexData.Size = mAnimationHandler.SlamAnimation.Size * mActor.mSizeMultiplier;
-		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.SlamAnimation.Size * mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
-			mAnimationHandler.SlamAnimation.AnimationTextureIndexes[0], mAnimationHandler.SlamAnimation.Size, mAnimationHandler.SlamAnimation.TexturePosition, mActor.mModelMatrix, flipped);
-		//std::cout << "SLAM" << std::endl;
-		mAnimationHandler.RunAnimation.index = 0;
-		runAnimOneShot = true;
-		break;
-	case PlayerStates::WALLSLIDING:
-		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
-		//mActor.mSprite.vertexData.Size = mAnimationHandler.WallSlideAnimation.Size * mActor.mSizeMultiplier;
-		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mAnimationHandler.WallSlideAnimation.Size * mActor.mSizeMultiplier, mCamera.GetProjectionMatrix(),
-			mAnimationHandler.WallSlideAnimation.AnimationTextureIndexes[0], mAnimationHandler.WallSlideAnimation.Size, mAnimationHandler.WallSlideAnimation.TexturePosition, mActor.mModelMatrix, !flipped);
-		//std::cout << "WALL" << std::endl;
-		if (!Mix_Playing(6)) {
-			Mix_PlayChannel(6, mAudioHandler.WallSlide, 0);
-		}
-		mAnimationHandler.RunAnimation.index = 0;
-		runAnimOneShot = true;
-		break;
-	case PlayerStates::DEAD:
-
-		break;
-	case PlayerStates::HIT:
-
-		break;
-	case PlayerStates::IDLE:
-		mActor.mSprite.vertexData.Size = mAnimationHandler.FallAnimation.Size * mActor.mSizeMultiplier;
-		mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
-			mAnimationHandler.IdleAnimation.AnimationTextureIndexes[0], mAnimationHandler.IdleAnimation.Size, mAnimationHandler.IdleAnimation.TexturePosition, mActor.mModelMatrix, flipped);
-		//std::cout << "IDLE" << std::endl;
-		mAnimationHandler.RunAnimation.index = 0;
-		runAnimOneShot = true;
-		break;
-	}
-	
-	if (mMovementHandler.CheckPlayerStateChange()) {
-		if (mMovementHandler.CompareToLastState(PlayerStates::SLAMMING) && mMovementHandler.currentPlayerState != PlayerStates::SLAMMING) {
-			mAudioHandler.PlayNextLandHardSound();
-		}
-
-		if (mMovementHandler.CompareToLastState(PlayerStates::FALLING) && mMovementHandler.currentPlayerState != PlayerStates::FALLING && mMovementHandler.currentPlayerState != PlayerStates::SLAMMING && mMovementHandler.currentPlayerState != PlayerStates::DOUBLE_JUMPING) {
-			mAudioHandler.PlayNextLandSoftSound();
-		}
-
-		if (mMovementHandler.currentPlayerState != PlayerStates::SLIDING) {
-			Mix_HaltChannel(5);
-		}
-		if (mMovementHandler.currentPlayerState != PlayerStates::WALLSLIDING) {
-			Mix_HaltChannel(6);
-		}
-		if (mMovementHandler.currentPlayerState != PlayerStates::FALLING) {
-			Mix_HaltChannel(4);
-			Mix_Volume(4, 0);
-			FallVolume = 1;
-		}
-
-	}
-
-
-	std::cout << glm::to_string(mActor.velocity) << std::endl;
-
-	//uint32_t test123 = 529;
-	//glm::vec2 test5 = mAnimationHandler.FallAnimation.Size;
-	//glm::vec2 test6 = mAnimationHandler.FallAnimation.TexturePosition;
-	//
-	//
-	//mBatchRenderer.DrawSeperatly(mActor.mSprite.vertexData.Position, mActor.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(), test123, test5, test6, mActor.mModelMatrix);
-	//std::cout << glm::to_string(mActor.velocity) << std::endl;
-
-	//std::cout << "Km/h :" << std::abs((mActor.velocity.x / 54.0f) * 3.6f) << std::endl;
-	//static std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> tmp1;
-	//if (int(mActor.mPosition.x) >= 1000.0f && tmpbool1 == true) {
-	//	tmp1 = std::chrono::high_resolution_clock::now();
-	//	tmpbool1 = false;
-	//}
-	//if (int(mActor.mPosition.x) >= 2200.0f && tmpbool2 == true) {
-	//	std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - tmp1).count() << "!!!!!!!!!!!!!" << std::endl;
-	//	tmpbool2 = false;
-	//}
 }
 
 void App::ShutDown() {
@@ -656,7 +383,6 @@ void App::ShutDown() {
 
 	mBatchRenderer.ShutDown();
 
-	//glDeleteVertexArrays(1, &gMesh1.mVAO);
 	glDeleteProgram(mGraphicsPipelineShaderProgram);
 
 	Mix_Quit();

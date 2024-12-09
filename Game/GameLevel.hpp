@@ -14,8 +14,6 @@ public:
 
 	~GameLevel();
 
-	//nlohmann::json GameLevelDataJson;
-
 	std::vector<GameObject> mBlocks;
 
 	std::vector<std::vector<std::string>> mLevelDataCsv;
@@ -29,8 +27,6 @@ public:
 	void LoadLevelJson(const std::string file);
 
 	void BuildLevel();
-
-	void BuildLevelOld();
 
 	bool isLoaded{ false };
 

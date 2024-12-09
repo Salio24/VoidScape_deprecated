@@ -1,7 +1,7 @@
 #include "Actor.hpp"
 
 Actor::Actor() {
-	std::cout << "Actor created" << std::endl;
+
 }
 
 Actor::~Actor() {
@@ -18,8 +18,5 @@ void Actor::Update() {
 }
 
 void Actor::Move() {
-	//mPosition += CheckBorderColision(direction, mPosition) * mMovementSpeed;
-	//mPosition = position + mSprite.vertexData.Position;
-
 	mRelativePosition = mPosition - mSprite.vertexData.Position;
 }

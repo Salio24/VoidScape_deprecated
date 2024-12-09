@@ -24,7 +24,7 @@ public:
 
 	void Move();
 
-	void Transform() override;
+	void Transform();
 
 	float movementSpeed{500.0f};
 
@@ -34,6 +34,20 @@ public:
 
 	glm::vec2 mScreenPosition{ 0.0f, 0.0f };
 
-	float mSizeMultiplier{ 60.0f };
+	float flyAngleTargetPortal{ -1.0f };
+	float flyAnglePortal{ 0.0f };
+
+	bool isWallMountableL{ false };
+	bool isWallMountableR{ false };
+
+	bool mEscaped{ false };
+
+	bool mDead{ false };
+
+	bool mDeadSoundOneShot{ true };
+
+	bool isSuckedPortal{ false };
+
+	float mSizeMultiplier{ 240.0f };
 private:
 };

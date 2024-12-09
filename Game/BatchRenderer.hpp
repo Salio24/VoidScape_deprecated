@@ -22,7 +22,7 @@ struct BatchRenderer {
 	void StartUp(const GLuint& PipelineProgram);
 	void ShutDown();
 
-	void BeginBatch(const glm::mat4& ProjectionMatrix, const glm::mat4& test = glm::mat4(1.0f));
+	void BeginBatch(const glm::mat4& ProjectionMatrix);
 	void EndBatch();
 	void Flush(const glm::mat4 ModelMatrix = glm::mat4(1.0f));
 
@@ -36,7 +36,6 @@ struct BatchRenderer {
 	static const size_t MaxQuadCount{ 1000 };
 	static const size_t MaxVertexCount{ MaxQuadCount * 4 };
 	static const size_t MaxIndexCount{ MaxQuadCount * 6 };
-	static const size_t MaxTextureSlots{32};
 
 	GLuint mVAO{ 0 };
 	GLuint mVBO{ 0 };
@@ -47,14 +46,7 @@ struct BatchRenderer {
 	Box* QuadBuffer{ nullptr };
 	Box* QuadBufferPtr{ nullptr };
 
-	GLuint WhiteTexture = 0;
-	uint32_t WhiteTextureSlot = 0;
-
-	std::array<uint32_t, MaxTextureSlots> TextureSlots;
-	uint32_t TextureSlotIndex{ 1 };
-
 	glm::mat4 CurrentProjectionMatrix;
-	glm::mat4 mod;
 
 	GLuint CurrentPipeline;
 

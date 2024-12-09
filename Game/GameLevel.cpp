@@ -93,7 +93,25 @@ void GameLevel::BuildLevel() {
 				}
 				if ((mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 1 || (mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 15) {
 					obj.isCollidable = true;
-				} 
+				}
+				else if ((mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 2) {
+					obj.isCollidable = false;
+					obj.mTriggerAABBPos = glm::vec2(obj.mSprite.vertexData.Position.x + (float)mBlockSize * (3.0f/8.0f), obj.mSprite.vertexData.Position.y);
+					obj.mTriggerAABBSize = glm::vec2(mBlockSize / 4, mBlockSize);
+					obj.isDeathTrigger = true;
+				}
+				else if ((mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 3) {
+					obj.isCollidable = false;
+					obj.mTriggerAABBPos = glm::vec2(obj.mSprite.vertexData.Position.x + (float)mBlockSize * (3.0f / 8.0f), obj.mSprite.vertexData.Position.y);
+					obj.mTriggerAABBSize = glm::vec2(mBlockSize / 4, mBlockSize / 2);
+					obj.isDeathTrigger = true;
+				}
+				else if ((mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 4) {
+					obj.isCollidable = true;
+					obj.mTriggerAABBPos = obj.mSprite.vertexData.Position;
+					obj.mTriggerAABBSize = obj.mSprite.vertexData.Size;
+					obj.isDeathTrigger = true;
+				}
 				else {
 					obj.isCollidable = false;
 				}

@@ -30,7 +30,4 @@ public:
 
 	// array to keep track how many layers are in use
 	std::array<int, 32> layersUsed;
-
-	
-
 };

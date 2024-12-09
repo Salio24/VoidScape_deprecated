@@ -1,9 +1,9 @@
 #pragma once
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <chrono>
 #include "Sign.hpp"
-
-class App;
+#include "Actor.hpp"
 
 enum class MovementState {
 	MOVE_LEFT,
@@ -15,20 +15,6 @@ enum class MovementState {
 	END
 };
 
-enum class PlayerStates {
-	RUNNING,
-	JUMPING,
-	DOUBLE_JUMPING,
-	FALLING,
-	SLIDING,
-	SLAMMING,
-	WALLSLIDING,
-	DEAD,
-	HIT,
-	IDLE,
-	END
-};
-
 enum class LookDirections {
 	LEFT,
 	RIGHT,
@@ -37,29 +23,18 @@ enum class LookDirections {
 
 class MovementHandler {
 
-	App& app();
-
-	App* app_;
-
 	glm::vec2 acceleration{ 0.0f, 0.0f };
 
 	void Move(glm::vec2& actorVelocity, const glm::vec2& acceleration);
 
-	void WallJump();
+	void Jump(float& deltaTime, const float& jumpSpeed, glm::vec2& actorVelocity);
 
-	void Jump(float& deltaTime, const float& jumpSpeed);
-
-	void Slam(float& deltaTime, const float& slamSpeed, const float& speedLimit);
-
-	void CheckPlayerState();
+	void Slam(float& deltaTime, const float& slamSpeed, const float& speedLimit, glm::vec2& actorVelocity);
 
 	float frictionModifier{ 7.2f };
 
 	const int jumpBufferTime{ 100 };
 	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> jumpBufferTimer;
-
-	//const int wallJumpBufferTime{ 100 };
-	//std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> wallJumpBufferTimer; 
 
 	const int jumpTime{ 200 };
 	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> jumpTimer;
@@ -76,45 +51,29 @@ class MovementHandler {
 
 	bool isDoubleJumping{ false };
 
-	bool isSlamming{ false };
-
-
 	bool slideOneShot{ true };
 
 	int slideDirection{ 0 };
 
-
 public:
-	PlayerStates lastState = PlayerStates::IDLE;
 	MovementHandler();
 
 	~MovementHandler();
 
-	bool CheckPlayerStateChange();
-
-	bool CompareToLastState(const PlayerStates& state);
-
 	bool canDoubleJump{ false };
 	bool isGrounded{ false };
-
-	bool debugMove{ false };
+	bool isSlamming{ false };
 
 	bool isSliding{ false };
 	bool canWallStick{ false };
 
-	void Update(float& deltaTime);
+	void Update(float& deltaTime, Actor& actor);
 
 	bool spacebarOneShot{ true };
 
 	bool duckOneShot{ true };
 
-	bool AOneShot{ true };
-
-	bool DOneShot{ true };
-
 	bool KeyboadStates[static_cast<int>(MovementState::END)] = { false };
-
-	PlayerStates currentPlayerState = PlayerStates::IDLE; // Initialize with a default state
 
 	LookDirections lookDirection = LookDirections::RIGHT;
 

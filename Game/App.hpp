@@ -22,6 +22,10 @@
 #include "Texture.hpp"
 #include "AnimationHandler.hpp"
 #include "AudioHandler.hpp"
+#include "BlackHole.hpp"
+#include "StateMachine.hpp"
+#include "EscapePortal.hpp"
+#include "SimpleTextOut.hpp"
 
 
 class App {
@@ -46,6 +50,11 @@ public:
 	static App& getInstance();
 
 	void PostStartUp();
+
+	void LoadGame();
+	
+	void TitleScreenUpdate();
+
 	void MainLoop();
 
 	void SetGraphicsPipelineShaderProgram(GLuint program);
@@ -53,19 +62,15 @@ public:
 	int GetWindowWidth();
 	int GetWindowHeight();
 
-	int mWindowWidth{ 1920 };
-	int mWindowHeight{ 1080 };
+	int mWindowWidth{ 2560 };
+	int mWindowHeight{ 1440 };
 
 	SDL_Window* mWindow{ nullptr };
 	SDL_GLContext mGlContext{ nullptr };
 
 	GLuint mGraphicsPipelineShaderProgram{ 0 };
 
-	glm::vec2 pos2;
-
 	InputManager mInputManager;
-
-	bool gravity{ true };
 
 	BatchRenderer mBatchRenderer;
 
@@ -77,6 +82,8 @@ public:
 
 	GameLevel mLevel;
 
+	EscapePortal mEscapePortal;
+
 	TextureHandler mTextureHandler;
 
 	AnimationHandler mAnimationHandler;
@@ -84,24 +91,39 @@ public:
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> tp1;
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> tp2;
 
-	GameEntity object1;
+	BlackHole mBlackHole;
 
-	glm::vec4 temp_color;
+	TextOut mTextOut;
 
-	std::vector<GameObject> test1;
+	StateMachine mStateMachine;
 
 	Camera mCamera;
 
 	PipelineManager mPipelineManager;
 
-	bool tmpbool1{ true };
-	bool tmpbool2{ true };
+	bool mGameStarted{ false };
 
 	bool mQuit{ false };
-	bool mVsync{ true };
+	bool mVsync{ false };
 	bool mDebug{ true };
 
 	float deltaTime{ 0.1f };
 	float deltaTimeRaw;
 	float deltaTimeBuffer{ 0.0f };
+
+	float textSizeMultiplier{ 800.0f };
+	float titleScreenAlpha{ 0.0f };
+	int titleScreenMusicVolume{ 128 };
+
+	float titleScreenAlphaTime{ 0.01f };
+	float titleScreenAlphaTimer{ 0.0f };
+
+	float titleScreenMessageTime{ 2.0f };
+	float titleScreenMessageTimer{ 0.0f };
+
+	float titleScreenMusicVolumeTime{ 0.05f };
+	float titleScreenMusicVolumeTimer{ 0.0f };
+
+	float startMessageTime{ 2.0f };
+	float startMessageTimer{ 0.0f };
 };

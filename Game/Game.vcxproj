@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>ClangCL</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -150,8 +150,10 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="AudioHandler.cpp" />
     <ClCompile Include="BatchRenderer.cpp" />
+    <ClCompile Include="BlackHole.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CollisionHandler.cpp" />
+    <ClCompile Include="EscapePortal.cpp" />
     <ClCompile Include="GameEntity.cpp" />
     <ClCompile Include="GameLevel.cpp" />
     <ClCompile Include="GameObject.cpp" />
@@ -166,6 +168,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="SimpleTextOut.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="RenderHandler.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -178,8 +181,8 @@
       </ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="IO.cpp" />
+    <ClCompile Include="StateMachine.cpp" />
     <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Actor.hpp" />
@@ -187,8 +190,10 @@
     <ClInclude Include="App.hpp" />
     <ClInclude Include="AudioHandler.hpp" />
     <ClInclude Include="BatchRenderer.hpp" />
+    <ClInclude Include="BlackHole.hpp" />
     <ClInclude Include="Camera.hpp" />
     <ClInclude Include="CollisionHandler.hpp" />
+    <ClInclude Include="EscapePortal.hpp" />
     <ClInclude Include="GameEntity.hpp" />
     <ClInclude Include="GameLevel.hpp" />
     <ClInclude Include="GameObject.hpp" />
@@ -199,6 +204,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Sign.hpp" />
+    <ClInclude Include="SimpleTextOut.hpp" />
     <ClInclude Include="Sprite.hpp" />
     <ClInclude Include="RenderHandler.hpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -207,8 +213,8 @@
     <ClInclude Include="PipelineManager.hpp" />
     <ClInclude Include="IO.hpp" />
     <ClInclude Include="HelperStructs.hpp" />
+    <ClInclude Include="StateMachine.hpp" />
     <ClInclude Include="Texture.hpp" />
-    <ClInclude Include="TextureLoader.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\fragment.glsl" />
