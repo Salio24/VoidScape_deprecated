@@ -1,0 +1,18 @@
+#include "App.hpp"
+#include <SDL3/SDL_hints.h>
+
+int main(int argc, char* argv[]) {
+	App& app = App::getInstance();
+
+	if (__cplusplus == 202002L) std::cout << "C++20\n";
+	else if (__cplusplus == 201703L) std::cout << "C++17\n";
+	else if (__cplusplus == 201402L) std::cout << "C++14\n";
+	else if (__cplusplus == 201103L) std::cout << "C++11\n";
+	else if (__cplusplus == 199711L) std::cout << "C++98\n";
+	else std::cout << "Unknown C++ standard\n";
+
+	app.PostStartUp();
+	app.LoadGame();
+	app.MainLoop();
+	return 0;
+}
