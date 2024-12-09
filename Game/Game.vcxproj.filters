@@ -54,9 +54,6 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main_old.cpp">
-      <Filter>Externals</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\glad.c">
       <Filter>Externals</Filter>
     </ClCompile>
@@ -73,9 +70,6 @@
       <Filter>Source Files\Render</Filter>
     </ClCompile>
     <ClCompile Include="PipelineManager.cpp">
-      <Filter>Source Files\Render</Filter>
-    </ClCompile>
-    <ClCompile Include="RenderHandler.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
     <ClCompile Include="Sprite.cpp">
@@ -95,9 +89,6 @@
     </ClCompile>
     <ClCompile Include="CollisionHandler.cpp">
       <Filter>Source Files\Object</Filter>
-    </ClCompile>
-    <ClCompile Include="OneLoneCoder_PGE_Rectangles.cpp">
-      <Filter>Externals</Filter>
     </ClCompile>
     <ClCompile Include="MovementHandler.cpp">
       <Filter>Source Files\Object</Filter>
@@ -152,9 +143,6 @@
     <ClInclude Include="PipelineManager.hpp">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
-    <ClInclude Include="RenderHandler.hpp">
-      <Filter>Header Files\Render</Filter>
-    </ClInclude>
     <ClInclude Include="GameEntity.hpp">
       <Filter>Header Files\Object</Filter>
     </ClInclude>
@@ -166,9 +154,6 @@
     </ClInclude>
     <ClInclude Include="CollisionHandler.hpp">
       <Filter>Header Files\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="olcPixelGameEngine.h">
-      <Filter>Externals</Filter>
     </ClInclude>
     <ClInclude Include="MovementHandler.hpp">
       <Filter>Header Files\Object</Filter>

@@ -158,22 +158,10 @@
     <ClCompile Include="GameLevel.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Input.cpp" />
-    <ClCompile Include="main_old.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MovementHandler.cpp" />
-    <ClCompile Include="OneLoneCoder_PGE_Rectangles.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="SimpleTextOut.cpp" />
     <ClCompile Include="Sprite.cpp" />
-    <ClCompile Include="RenderHandler.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="PipelineManager.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
       </ExcludedFromBuild>
@@ -199,17 +187,9 @@
     <ClInclude Include="GameObject.hpp" />
     <ClInclude Include="Input.hpp" />
     <ClInclude Include="MovementHandler.hpp" />
-    <ClInclude Include="olcPixelGameEngine.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="Sign.hpp" />
     <ClInclude Include="SimpleTextOut.hpp" />
     <ClInclude Include="Sprite.hpp" />
-    <ClInclude Include="RenderHandler.hpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClInclude>
     <ClInclude Include="PipelineManager.hpp" />
     <ClInclude Include="IO.hpp" />
     <ClInclude Include="HelperStructs.hpp" />
