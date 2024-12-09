@@ -227,6 +227,8 @@ void App::Update() {
 
 	tp1 = tp2;
 
+
+
 	if (mGameStarted == false && mActor.velocity.x != 0.0f) {
 		Mix_HaltMusic();
 		mGameStarted = true;
@@ -249,14 +251,16 @@ void App::Update() {
 		}
 	}
 
+
+
 	mMovementHandler.Update(deltaTime, mActor);
 
 	mActor.Update();
 	if (mGameStarted) {
 		mBlackHole.Update(mLevel.mBlocks, mActor, deltaTime, mAnimationHandler.BlackHoleBirthAnimation, mAnimationHandler.BlackHoleLoopAnimation, mAudioHandler.BlackHoleBorn, mAudioHandler.ConsumedByVoid, mAudioHandler.BlackHoleIdle);
-		mBatchRenderer.DrawSeperatly(mBlackHole.mSprite.vertexData.Position, mBlackHole.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
-			mBlackHole.mSprite.vertexData.TextureIndex, mBlackHole.AnimationSize, mBlackHole.mSprite.vertexData.TexturePosition, mBlackHole.mModelMatrix);
 	}
+
+
 
 	if (mActor.mPosition.y < -500.0f) {
 		if (!mActor.mDead) {
@@ -274,46 +278,54 @@ void App::Update() {
 	}
 
 
+
 	CollisionUpdate(mLevel.mBlocks, mActor, mMovementHandler.LeftWallHug, mMovementHandler.RightWallHug, deltaTime, mMovementHandler.isGrounded);
 	mCamera.Update(mActor.velocity, mActor.mScreenPosition, deltaTime);
 	mActor.mScreenPosition = mCamera.GetProjectionMatrix() * glm::vec4(mActor.mPosition.x + mActor.mSprite.vertexData.Size.x / 2, mActor.mPosition.y + mActor.mSprite.vertexData.Size.y / 2, 0.0f, 1.0f);
 
+
+
 	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
+
+	if (mGameStarted) {
+		if (mBlackHole.mSprite.vertexData.Position.x + mBlackHole.mSprite.vertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
+			&& mBlackHole.mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f) && mLevel.mBlocks[i].isVisible == false) {
+			mBatchRenderer.DrawInBatch(mBlackHole.mSprite.vertexData.Position, mBlackHole.mSprite.vertexData.Size, mBlackHole.mSprite.vertexData.TextureIndex, mBlackHole.AnimationSize, mBlackHole.mSprite.vertexData.TexturePosition);
+		}
+	}
 
 	// buffer of block id that are being sucked into the black hole and visible
 	std::vector<int> flyingBlocks;
 
 	for (int i = 0; i < mLevel.mBlocks.size(); i++) {
-		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
-			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f) && mLevel.mBlocks[i].isVisible == false) {
-		}
-		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
+		if (mLevel.mBlocks[i].mSprite.vertexData.Position.x + mLevel.mBlocks[i].mSprite.vertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == false) {
 			mBatchRenderer.DrawInBatch(mLevel.mBlocks[i].mSprite.vertexData.Position, mLevel.mBlocks[i].mSprite.vertexData.Size, static_cast<uint32_t>(mLevel.mBlocks[i].mSprite.vertexData.TextureIndex), glm::vec2(0.25f, 0.25f));
 		}
-		else if (mLevel.mBlocks[i].mSprite.vertexData.Position.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
+		else if (mLevel.mBlocks[i].mSprite.vertexData.Position.x + mLevel.mBlocks[i].mSprite.vertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 			&& mLevel.mBlocks[i].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f) && mLevel.mBlocks[i].isVisible == true && mLevel.mBlocks[i].isSucked == true) {
 			flyingBlocks.push_back(i);
 		}
 	}
 
-	mBatchRenderer.EndBatch();
-	mBatchRenderer.Flush();
-
-	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
-
-	mBatchRenderer.EndBatch();
-	mBatchRenderer.Flush();
-
 	mEscapePortal.Update(mAnimationHandler.EscapePortalAnimation, deltaTime, mActor, mAudioHandler.PortalEscape, mAudioHandler.PortalIdle);
-	mBatchRenderer.DrawSeperatly(mEscapePortal.mSprite.vertexData.Position, mEscapePortal.mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
-		mEscapePortal.mSprite.vertexData.TextureIndex, mEscapePortal.AnimationSize, mEscapePortal.mSprite.vertexData.TexturePosition, mEscapePortal.mModelMatrix);
+	if (mEscapePortal.mSprite.vertexData.Position.x + mEscapePortal.mSprite.vertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
+		&& mEscapePortal.mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f)) {
+		mBatchRenderer.DrawInBatch(mEscapePortal.mSprite.vertexData.Position, mEscapePortal.mSprite.vertexData.Size, mEscapePortal.mSprite.vertexData.TextureIndex, mEscapePortal.AnimationSize, mEscapePortal.mSprite.vertexData.TexturePosition);
+	}
 
+	mBatchRenderer.EndBatch();
+	mBatchRenderer.Flush();
 
 	for (int i = 0; i < flyingBlocks.size(); i++) {
-		mBatchRenderer.DrawSeperatly(mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.Position, mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
-			static_cast<uint32_t>(mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.TextureIndex), glm::vec2(0.25f, 0.25f), glm::vec2(0.0f, 0.0f), mLevel.mBlocks[flyingBlocks[i]].mModelMatrix, false);
+		if (mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.Position.x + mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
+			&& mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f)) {
+			mBatchRenderer.DrawSeperatly(mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.Position, mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.Size, mCamera.GetProjectionMatrix(),
+				static_cast<uint32_t>(mLevel.mBlocks[flyingBlocks[i]].mSprite.vertexData.TextureIndex), glm::vec2(0.25f, 0.25f), glm::vec2(0.0f, 0.0f), mLevel.mBlocks[flyingBlocks[i]].mModelMatrix, false);
+		}
 	}
+
+
 
 	mStateMachine.Update(mMovementHandler, mAnimationHandler, mAudioHandler, mActor, deltaTime);
 	if (mActor.isVisible == true) {
@@ -321,12 +333,14 @@ void App::Update() {
 		mStateMachine.mCurrentActorTextureIndex, mStateMachine.mCurrentActorTextureSize, mStateMachine.mCurrentActorTexturePosition, mActor.mModelMatrix, mStateMachine.mActorFlipped);	
 	}
 
-	TitleScreenUpdate();
+	UIUpdate();
 }
 
-void App::TitleScreenUpdate() {
+void App::UIUpdate() {
+	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
+
 	if (mActor.mDead || mActor.mEscaped || mActor.isConsumedByVoid) {
-		mBatchRenderer.DrawSeperatly(glm::vec2(0.0f, 0.0f), glm::vec2(1920.0f, 1080.0f), glm::vec4((14.0f / 256.0f), (7.0f / 256.0f), (27.0f / 256.0f), titleScreenAlpha), mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix);
+		mBatchRenderer.DrawInBatch(glm::vec2(0.0f, 0.0f), glm::vec2(1920.0f, 1080.0f), glm::vec4((14.0f / 256.0f), (7.0f / 256.0f), (27.0f / 256.0f), titleScreenAlpha));
 		if (titleScreenAlphaTimer > titleScreenAlphaTime && titleScreenAlpha < 1.0f) {
 			titleScreenAlpha += 0.004f;
 			titleScreenAlphaTimer = 0.0f;
@@ -354,26 +368,29 @@ void App::TitleScreenUpdate() {
 			titleScreenMessageTimer = 0.0f;
 		}
 		if (titleScreenMessageTimer >= 1.0f) {
-			mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 240.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
-				static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[4], mCamera.mUIModelMatrix);
+			mBatchRenderer.DrawInBatch(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 240.0f), mTextOut.mTextureSize * textSizeMultiplier, 
+				static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[4]);
 			}
 			if (mActor.isConsumedByVoid && !mActor.mDead) {
-				mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
-					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[0], mCamera.mUIModelMatrix);
+				mBatchRenderer.DrawInBatch(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier,
+					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[0]);
 			}
 			else if (mActor.isConsumedByVoid && mActor.mDead) {
-				mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
-					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[2], mCamera.mUIModelMatrix);
+				mBatchRenderer.DrawInBatch(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier,
+					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[2]);
 			}
 			else if (!mActor.isConsumedByVoid && mActor.mDead) {
-				mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
-					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[3], mCamera.mUIModelMatrix);
+				mBatchRenderer.DrawInBatch(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier,
+					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[3]);
 			}
 			else if (mActor.mEscaped) {
-				mBatchRenderer.DrawSeperatly(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier, mCamera.GetProjectionMatrix(),
-					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[1], mCamera.mUIModelMatrix);
+				mBatchRenderer.DrawInBatch(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier,
+					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[1]);
 		}
 	}
+
+	mBatchRenderer.EndBatch();
+	mBatchRenderer.Flush(mCamera.mUIModelMatrix);
 }
 
 void App::ShutDown() {

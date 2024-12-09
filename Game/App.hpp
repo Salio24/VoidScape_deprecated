@@ -53,7 +53,7 @@ public:
 
 	void LoadGame();
 	
-	void TitleScreenUpdate();
+	void UIUpdate();
 
 	void MainLoop();
 
