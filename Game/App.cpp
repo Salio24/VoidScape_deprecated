@@ -3,7 +3,6 @@
 #include <cmath>
 #include <algorithm>
 #include "Sign.hpp"
-#include <cmath>
 #include <SDL3/SDL_image.h>
 #include <SDL3/SDL_mixer.h>
 #include <glm/gtx/norm.hpp>
