@@ -44,10 +44,10 @@ public:
 	Animation EscapePortalAnimation;
 
 private:
-	TextureHandler&  mTextureHandlerRef;
+	TextureHandler&  textureHandlerRef;
 
-	int SampelrSize{ 0 };
+	int sampelrSize{ 0 };
 
-	const int AnimationSpriteSizeX{ 128 };
-	const int AnimationSpriteSizeY{ 128 };
+	const int animationSpriteSizeX{ 128 };
+	const int animationSpriteSizeY{ 128 };
 };

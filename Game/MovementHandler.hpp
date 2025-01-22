@@ -22,7 +22,40 @@ enum class LookDirections {
 };
 
 class MovementHandler {
+public:
+	MovementHandler();
 
+	~MovementHandler();
+
+	void FinishDoubleJump();
+
+	void FinishJump();
+
+	bool mCanDoubleJump{ false };
+	bool mLast_mCanDoubleJump{ false };
+	bool mIsGrounded{ false };
+	bool mIsSlamming{ false };
+
+	bool mIsSliding{ false };
+	bool mCanWallStick{ false };
+
+	bool mIsWallMountableL{ false };
+	bool mIsWallMountableR{ false };
+
+	void Update(float& deltaTime, Actor& actor, const bool& started);
+
+	bool mSpacebarOneShot{ true };
+
+	bool mDuckOneShot{ true };
+
+	bool mKeyboadStates[static_cast<int>(MovementState::END)] = { false };
+
+	LookDirections mLookDirection = LookDirections::RIGHT;
+
+	bool mLeftWallHug{ false };
+	bool mRightWallHug{ false };
+
+private:
 	glm::vec2 acceleration{ 0.0f, 0.0f };
 
 	void Move(glm::vec2& actorVelocity, const glm::vec2& acceleration);
@@ -54,34 +87,6 @@ class MovementHandler {
 	bool slideOneShot{ true };
 
 	int slideDirection{ 0 };
-
-public:
-	MovementHandler();
-
-	~MovementHandler();
-
-	bool canDoubleJump{ false };
-	bool isGrounded{ false };
-	bool isSlamming{ false };
-
-	bool isSliding{ false };
-	bool canWallStick{ false };
-
-	void Update(float& deltaTime, Actor& actor);
-
-	bool spacebarOneShot{ true };
-
-	bool duckOneShot{ true };
-
-	bool KeyboadStates[static_cast<int>(MovementState::END)] = { false };
-
-	LookDirections lookDirection = LookDirections::RIGHT;
-
-	bool LeftWallHug{ false };
-	bool RightWallHug{ false };
-
-	bool GravityState{ true };
-
 };
 
 

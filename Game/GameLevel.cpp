@@ -8,115 +8,123 @@ GameLevel::~GameLevel() {
 
 }
 
-void GameLevel::LoadLevel(const std::string file) {
-
-	this->mBlocks.clear();
-	this->mLevelDataCsv.clear();
-
-	std::string line;
-	std::ifstream fstream(file);
-
-	if (fstream) {
-		// Read the entire file into a vector of strings
-		std::vector<std::string> lines;
-		while (std::getline(fstream, line)) {
-			lines.push_back(line);
-		}
-
-		// Iterate over the vector in reverse order
-		for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
-			std::istringstream sstream(*it);
-			std::string item;
-			std::vector<std::string> row;
-			while (std::getline(sstream, item, ',')) {
-				row.push_back(item);
-			}
-			mLevelDataCsv.push_back(row);
-		}
-	}
-	else {
-		std::cout << "Could not load level data" << std::endl;
-	}
-
-	isLoaded = true;
-
-}
-
 void GameLevel::LoadLevelJson(const std::string file) {
 
 	std::ifstream jsonStream(file);
 
 	nlohmann::json GameLevelDataJson = nlohmann::json::parse(jsonStream);
 
-	mLevelWidth = GameLevelDataJson["width"];
-	mLevelHeight = GameLevelDataJson["height"];
+	levelWidth = GameLevelDataJson["width"];
+	levelHeight = GameLevelDataJson["height"];
 
 	for (int i = 0; i < GameLevelDataJson["layers"].size(); i++) {
 		if (GameLevelDataJson["layers"][i]["name"] == "BaseLayer") {
-			std::vector<std::vector<int>> data(mLevelHeight, std::vector<int>(mLevelWidth));
+			std::vector<std::vector<int>> data(levelHeight, std::vector<int>(levelWidth));
 			std::vector vec = GameLevelDataJson["layers"][i]["data"].get<std::vector<int>>();
-			for (int j = 0; j < mLevelHeight; j++) {
-				for (int k = 0; k < mLevelWidth; k++) {
-					data[j][k] = vec[j * mLevelWidth + k];
+			for (int j = 0; j < levelHeight; j++) {
+				for (int k = 0; k < levelWidth; k++) {
+					data[j][k] = vec[j * levelWidth + k];
 				}
 			}
-			mTilesetsOffsets.push_back(GameLevelDataJson["tilesets"][i]["firstgid"]);
-			mLevelData.push_back(data);
+			tilesetsOffsets.push_back(GameLevelDataJson["tilesets"][i]["firstgid"]);
+			levelData.push_back(data);
 		}
 		else if (GameLevelDataJson["layers"][i]["name"] == "CollisionLayer") {
-			std::vector<std::vector<int>> data(mLevelHeight, std::vector<int>(mLevelWidth));
+			std::vector<std::vector<int>> data(levelHeight, std::vector<int>(levelWidth));
 			std::vector vec = GameLevelDataJson["layers"][i]["data"].get<std::vector<int>>();
-			for (int j = 0; j < mLevelHeight; j++) {
-				for (int k = 0; k < mLevelWidth; k++) {
-					data[j][k] = vec[j * mLevelWidth + k];
+			for (int j = 0; j < levelHeight; j++) {
+				for (int k = 0; k < levelWidth; k++) {
+					data[j][k] = vec[j * levelWidth + k];
 				}
 			}
-			mTilesetsOffsets.push_back(GameLevelDataJson["tilesets"][i]["firstgid"]);
-			mLevelData.push_back(data);
+			tilesetsOffsets.push_back(GameLevelDataJson["tilesets"][i]["firstgid"]);
+			levelData.push_back(data);
 		}
 	}
 }
 
-void GameLevel::BuildLevel() {
-	for (int i = 0; i < mLevelHeight; ++i) {
-		for (int j = 0; j < mLevelWidth; ++j) {
-			if (mLevelData[0][i][j] != 0 || mLevelData[1][i][j] != 0) {
+void GameLevel::BuildLevel(const int& tilesetOffset) {
+	//for (int i = 0; i < levelHeight; ++i) {
+	//	for (int j = 0; j < levelWidth; ++j) {
+	//		if (levelData[0][i][j] != 0 || levelData[1][i][j] != 0) {
+	//			GameObject obj;
+	//			obj.mSprite.mVertexData.Position = glm::vec2(j * blockSize, ((levelHeight - i) * blockSize) - blockSize);
+	//			obj.mSprite.mVertexData.Size = glm::vec2(blockSize, blockSize);
+	//			if (levelData[0][i][j] != 0) {
+	//				obj.mSprite.mVertexData.TextureIndex = levelData[0][i][j] - tilesetsOffsets[0] + 1;
+	//				obj.mIsVisible = true;
+	//			}
+	//			else {
+	//				obj.mIsVisible = false;
+	//			}
+	//			if ((levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 1 || (levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 15) {
+	//				obj.mIsCollidable = true;
+	//			}
+	//			else if ((levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 2) {
+	//				obj.mIsCollidable = false;
+	//				obj.mTriggerAABBPos = glm::vec2(obj.mSprite.mVertexData.Position.x + (float)blockSize * (3.0f/8.0f), obj.mSprite.mVertexData.Position.y);
+	//				obj.mTriggerAABBSize = glm::vec2(blockSize / 4, blockSize);
+	//				obj.mIsDeathTrigger = true;
+	//			}
+	//			else if ((levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 3) {
+	//				obj.mIsCollidable = false;
+	//				obj.mTriggerAABBPos = glm::vec2(obj.mSprite.mVertexData.Position.x + (float)blockSize * (3.0f / 8.0f), obj.mSprite.mVertexData.Position.y);
+	//				obj.mTriggerAABBSize = glm::vec2(blockSize / 4, blockSize / 2);
+	//				obj.mIsDeathTrigger = true;
+	//			}
+	//			else if ((levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 4) {
+	//				obj.mIsCollidable = true;
+	//				obj.mTriggerAABBPos = obj.mSprite.mVertexData.Position;
+	//				obj.mTriggerAABBSize = obj.mSprite.mVertexData.Size;
+	//				obj.mIsDeathTrigger = true;
+	//			}
+	//			else {
+	//				obj.mIsCollidable = false;
+	//			}
+	//			this->mBlocks.push_back(obj);
+	//		}
+	//	}
+	//}
+	for (int i = 0; i < levelHeight; ++i) {
+		for (int j = 0; j < levelWidth; ++j) {
+			if (levelData[0][i][j] != 0 || levelData[1][i][j] != 0) {
 				GameObject obj;
-				obj.mSprite.vertexData.Position = glm::vec2(j * mBlockSize, ((mLevelHeight - i) * mBlockSize) - mBlockSize);
-				obj.mSprite.vertexData.Size = glm::vec2(mBlockSize, mBlockSize);
-				if (mLevelData[0][i][j] != 0) {
-					obj.mSprite.vertexData.TextureIndex = mLevelData[0][i][j] - mTilesetsOffsets[0] + 1;
-					obj.isVisible = true;
+				obj.mSprite.mVertexData.Position = glm::vec2(j * blockSize, ((levelHeight - i) * blockSize) - blockSize);
+				obj.mSprite.mVertexData.Size = glm::vec2(blockSize, blockSize);
+				if (levelData[0][i][j] != 0) {
+					obj.mSprite.mVertexData.TextureIndex = tilesetOffset + levelData[0][i][j] - 1;
+					obj.mIsVisible = true;
 				}
 				else {
-					obj.isVisible = false;
+					obj.mIsVisible = false;
 				}
-				if ((mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 1 || (mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 15) {
-					obj.isCollidable = true;
+				if ((levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 1 || (levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 15) {
+					obj.mIsCollidable = true;
 				}
-				else if ((mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 2) {
-					obj.isCollidable = false;
-					obj.mTriggerAABBPos = glm::vec2(obj.mSprite.vertexData.Position.x + (float)mBlockSize * (3.0f/8.0f), obj.mSprite.vertexData.Position.y);
-					obj.mTriggerAABBSize = glm::vec2(mBlockSize / 4, mBlockSize);
-					obj.isDeathTrigger = true;
+				else if ((levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 2) {
+					obj.mIsCollidable = false;
+					obj.mTriggerAABBPos = glm::vec2(obj.mSprite.mVertexData.Position.x + (float)blockSize * (3.0f / 8.0f), obj.mSprite.mVertexData.Position.y);
+					obj.mTriggerAABBSize = glm::vec2(blockSize / 4, blockSize);
+					obj.mIsDeathTrigger = true;
 				}
-				else if ((mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 3) {
-					obj.isCollidable = false;
-					obj.mTriggerAABBPos = glm::vec2(obj.mSprite.vertexData.Position.x + (float)mBlockSize * (3.0f / 8.0f), obj.mSprite.vertexData.Position.y);
-					obj.mTriggerAABBSize = glm::vec2(mBlockSize / 4, mBlockSize / 2);
-					obj.isDeathTrigger = true;
+				else if ((levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 3) {
+					obj.mIsCollidable = false;
+					obj.mTriggerAABBPos = glm::vec2(obj.mSprite.mVertexData.Position.x + (float)blockSize * (3.0f / 8.0f), obj.mSprite.mVertexData.Position.y);
+					obj.mTriggerAABBSize = glm::vec2(blockSize / 4, blockSize / 2);
+					obj.mIsDeathTrigger = true;
 				}
-				else if ((mLevelData[1][i][j] - mTilesetsOffsets[1]) + 1 == 4) {
-					obj.isCollidable = true;
-					obj.mTriggerAABBPos = obj.mSprite.vertexData.Position;
-					obj.mTriggerAABBSize = obj.mSprite.vertexData.Size;
-					obj.isDeathTrigger = true;
+				else if ((levelData[1][i][j] - tilesetsOffsets[1]) + 1 == 4) {
+					obj.mIsCollidable = true;
+					obj.mTriggerAABBPos = obj.mSprite.mVertexData.Position;
+					obj.mTriggerAABBSize = obj.mSprite.mVertexData.Size;
+					obj.mIsDeathTrigger = true;
 				}
 				else {
-					obj.isCollidable = false;
+					obj.mIsCollidable = false;
 				}
-				this->mBlocks.push_back(obj);
+				//this->mBlocks.push_back(obj);
 			}
 		}
 	}
+
 }

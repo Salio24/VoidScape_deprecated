@@ -12,8 +12,6 @@ public:
 
 	void Init(TextureHandler& textureHandler, const char* filepath);
 
-	void Update();
-
 	int mTextTextureIndex{ 0 };
 
 	std::vector<glm::vec2> mTexturePositions;

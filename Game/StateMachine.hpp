@@ -17,10 +17,19 @@ enum class PlayerStates {
 	HIT,
 	IDLE,
 	SUCKED,
-	VOID_CONSUMED,
 	ESCAPED,
 	END
 };
+
+enum class DeathCause {
+	LAVA,
+	FELL_DOWN,
+	BLACK_HOLE,
+	STUPIDITY,
+	BAN_HAMMER,
+	END
+};
+
 
 class StateMachine {
 public:
@@ -29,6 +38,8 @@ public:
 	~StateMachine();
 
 	void Update(MovementHandler& movementHandler, AnimationHandler& animationHandler, AudioHandler& audioHandler, Actor& actor, const float& deltaTime);
+
+	void Reset();
 
 	bool CheckPlayerStateChange();
 
@@ -40,10 +51,8 @@ public:
 	uint32_t mCurrentActorTextureIndex{ 0 };
 	bool mActorFlipped{ false };
 
-	PlayerStates currentPlayerState = PlayerStates::IDLE;
-	PlayerStates lastState = PlayerStates::IDLE;
-	bool deadAnimOneShot{ true };
-	bool deadAnimDone{ false };
+	DeathCause mActorDeathCause = DeathCause::END;
+
 private:
 
 	int FallVolume{ 1 };
@@ -52,9 +61,14 @@ private:
 	float FallVolumeTime{ 0.1f };
 	float FallVolumeTimer{ 0.0f };
 
+	bool deadAnimOneShot{ true };
+	bool deadAnimDone{ false };
 	int SuckedVolume{ 1 };
 	float SuckedVolumeTime{ 0.2f };
 	float SuckedVolumeTimer{ 0.0f };
+
+	PlayerStates currentPlayerState = PlayerStates::IDLE;
+	PlayerStates lastState = PlayerStates::IDLE;
 
 	void CheckPlayerState(Actor& actor, MovementHandler& movementHandler);
 };

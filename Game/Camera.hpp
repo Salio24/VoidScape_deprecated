@@ -17,23 +17,24 @@ public:
 
 	glm::mat4 GetProjectionMatrix() const;
 
-	void SetProjectionMatrix();
+	void SetProjectionMatrix(const float width);
 
 	glm::vec2 mCameraOffset{ 0.0f, 0.0f };
 
 	glm::mat4 mUIModelMatrix{1.0f};
 
+	glm::vec2 mCameraPosition{ 0.0f, 0.0f };
+
 private:
-	glm::vec2 mMousePossition;
+	glm::vec2 mousePossition;
 
-	glm::mat4 mProjectionMatrix;
-	glm::mat4 mInitialProjectionMatrix;
+	glm::mat4 projectionMatrix;
+	glm::mat4 initialProjectionMatrix;
 
-	glm::vec2 mOldMousePosition;
 
-	float mCameraOffsetTimerBuffer{ 0.0f };
-	float mCameraOffsetTimeBuffer{ 0.5f };
-	float mCameraOffsetTimerBuffer2{ 0.0f };
-	float mCameraOffsetTimeBuffer2{ 0.5f };
+	float cameraOffsetTimerBuffer{ 0.0f };
+	float cameraOffsetTimeBuffer{ 0.5f };
+	float cameraOffsetTimerBuffer2{ 0.0f };
+	float cameraOffsetTimeBuffer2{ 0.5f };
 };
 

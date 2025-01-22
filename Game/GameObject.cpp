@@ -9,5 +9,5 @@ GameObject::~GameObject() {
 }
 
 void GameObject::Update() {
-	mPosition = mSprite.vertexData.Position;
+	mPosition = mSprite.mVertexData.Position;
 }

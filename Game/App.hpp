@@ -26,47 +26,23 @@
 #include "StateMachine.hpp"
 #include "EscapePortal.hpp"
 #include "SimpleTextOut.hpp"
-
+#include "ShaderProgram.hpp"
+#include "PipelineProgram.hpp"
+#include "TextRenderer.hpp"
+#include "SceneManager.hpp"
+#include "LevelScene.hpp"
+#include "UIScenes.hpp"
+#include "BackgroundRenderer.hpp"
 
 class App {
-	App();
-
-	~App();
-
-	App(const App&) = delete;
-
-	App& operator=(const App&) = delete;
-
-	void StartUp();
-
-	void ShutDown();
-
-	void Update();
-
-	static void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
-		GLenum severity, GLsizei length,
-		const GLchar* message, const void* param);
 public:
 	static App& getInstance();
 
 	void PostStartUp();
 
-	void LoadGame();
-	
-	void UIUpdate();
+	void LoadGame(const bool retry = false);
 
 	void MainLoop();
-
-	void SetGraphicsPipelineShaderProgram(GLuint program);
-
-	int GetWindowWidth();
-	int GetWindowHeight();
-
-	int mWindowWidth{ 2560 };
-	int mWindowHeight{ 1440 };
-
-	SDL_Window* mWindow{ nullptr };
-	SDL_GLContext mGlContext{ nullptr };
 
 	GLuint mGraphicsPipelineShaderProgram{ 0 };
 
@@ -88,9 +64,6 @@ public:
 
 	AnimationHandler mAnimationHandler;
 
-	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> tp1;
-	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> tp2;
-
 	BlackHole mBlackHole;
 
 	TextOut mTextOut;
@@ -99,31 +72,113 @@ public:
 
 	Camera mCamera;
 
+
 	PipelineManager mPipelineManager;
 
-	bool mGameStarted{ false };
+	ShaderProgram mGeneralShaderProgram;
+	ShaderProgram mTextShaderProgram;
+	ShaderProgram mBackgroundShaderProgram;
+	ShaderProgram mBackgroundFramebufferShaderProgram;
+
+
+	PipelineProgram mPipelineProgram;
+
+	SceneManager mSceneManager;
+
+	BackgroundRenderer mBackgroundRenderer;
+
+	TextRenderer mTextRenderer;
 
 	bool mQuit{ false };
-	bool mVsync{ false };
-	bool mDebug{ true };
+	bool mPause{ false };
 
-	float deltaTime{ 0.1f };
+	glm::ivec2 viewportOffset{ 0 };
+
+	int mWindowWidth{ 1920 };
+	int mWindowHeight{ 1080 };
+private: 
+	App();
+
+	~App();
+
+	App(const App&) = delete;
+
+	App& operator=(const App&) = delete;
+
+	void StartUp();
+
+	void ShutDown();
+
+	void Update();
+
+	void UpdatePlayground();
+
+	void UIUpdate();
+
+	static void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
+		GLenum severity, GLsizei length,
+		const GLchar* message, const void* param);
+
+	bool vsync      { false };
+	bool debugMode  { true };
+	bool gameStarted{ false };
+	
+	bool autoRestart{ false };
+
+	int SFXVolume{ 3 };
+	int MusicVolume{ 3 };
+
 	float deltaTimeRaw;
+	float deltaTime      { 0.1f };
 	float deltaTimeBuffer{ 0.0f };
 
-	float textSizeMultiplier{ 800.0f };
-	float titleScreenAlpha{ 0.0f };
-	int titleScreenMusicVolume{ 128 };
+	float textSizeMultiplier    { 800.0f };
+	float titleScreenAlpha      { 0.0f };
+	int   titleScreenMusicVolume{ 128 };
 
-	float titleScreenAlphaTime{ 0.01f };
+	float titleScreenAlphaTime { 0.01f };
 	float titleScreenAlphaTimer{ 0.0f };
+	bool titleScreenDarkened{ false };
 
-	float titleScreenMessageTime{ 2.0f };
+	float titleScreenMessageTime { 2.0f };
 	float titleScreenMessageTimer{ 0.0f };
 
-	float titleScreenMusicVolumeTime{ 0.05f };
+	float titleScreenMusicVolumeTime { 0.05f };
 	float titleScreenMusicVolumeTimer{ 0.0f };
 
-	float startMessageTime{ 2.0f };
+	float startMessageTime { 2.0f };
 	float startMessageTimer{ 0.0f };
+
+	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> TimePoint1;
+	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> TimePoint2;
+
+	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> levelTimerTotal;
+	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> pauseTimer;
+
+	long long levelTimeTotal{ 0 };
+	long long levelTime{ 0 };
+	long long pauseTime{ 0 };
+
+	int levelTime_minutes{ 0 };
+	int levelTime_seconds{ 0 };
+	int levelTime_centiseconds{ 0 };
+
+	int best_levelTime_minutes{ 0 };
+	int best_levelTime_seconds{ 0 };
+	int best_levelTime_centiseconds{ 0 };
+
+	bool newBestTimeMessageOneShot{ false };
+
+	SDL_Window* mWindow     { nullptr };
+	SDL_GLContext mGlContext{ nullptr };
+
+	glm::ivec2 screenSize{ 0 };
+
+	std::vector<glm::ivec2> resolutions;
+
+	int currentResolutionIndex{ 4 };
+
+	std::vector<std::string> windowModes;
+
+	int currentWindowModeIndex{ 0 };
 };

@@ -14,25 +14,21 @@ public:
 
 	~GameLevel();
 
-	std::vector<GameObject> mBlocks;
-
-	std::vector<std::vector<std::string>> mLevelDataCsv;
-
-	std::vector<std::vector<std::vector<int>>> mLevelData;
-
-	std::vector<int> mTilesetsOffsets;
-
-	void LoadLevel(const std::string file);
+	//std::vector<GameObject> mBlocks;
 
 	void LoadLevelJson(const std::string file);
 
-	void BuildLevel();
+	void BuildLevel(const int& tilesetOffset);
 
-	bool isLoaded{ false };
+private:
+	std::vector<int> tilesetsOffsets;
 
-	int mLevelWidth;
-	int mLevelHeight;
+	std::vector<std::vector<std::string>> levelDataCsv;
 
-	uint8_t mBlockSize{ 18 };
+	std::vector<std::vector<std::vector<int>>> levelData;
 
+	int levelWidth;
+	int levelHeight;
+
+	uint8_t blockSize{ 18 };
 };

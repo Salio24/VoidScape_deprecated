@@ -4,9 +4,14 @@
 #include "Actor.hpp"
 
 
-bool PointVsRect(const glm::vec2& p, const Box* r)
+//bool PointVsRect(const glm::vec2& p, const Box* r)
+//{
+//	return (p.x >= r->Position.x && p.y >= r->Position.y && p.x < r->Position.x + r->Size.x && p.y < r->Position.y + r->Size.y);
+//}
+
+bool PointVsRect(const glm::vec2& point, const glm::vec2& boxSize, const glm::vec2& boxPos)
 {
-	return (p.x >= r->Position.x && p.y >= r->Position.y && p.x < r->Position.x + r->Size.x && p.y < r->Position.y + r->Size.y);
+	return (point.x >= boxPos.x && point.y >= boxPos.y && point.x < boxPos.x + boxSize.x && point.y < boxPos.y + boxSize.y);
 }
 
 bool RectVsRect(const glm::vec2 rect1Pos, const glm::vec2 rect1Size, const glm::vec2 rect2Pos, const glm::vec2 rect2Size)
@@ -97,29 +102,29 @@ bool DynamicRectVsRect(const Box& dynamicBox, const float deltaTime, const Box& 
 	}
 }
 
-bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box& staticBox, glm::vec2& dynamicBoxVelocity, Actor& actor, glm::vec2& averagedNormal, bool& NormalGroundCheck)
+bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box& staticBox, glm::vec2& dynamicBoxVelocity, Actor& actor, glm::vec2& averagedNormal, bool& NormalGroundCheck, bool& isWallMountableL, bool& isWallMountableR, glm::vec2& norm)
 {
 
 	glm::vec2 contactPoint, contactNormal;
 	float contactTime = 0.0f;
-	if (DynamicRectVsRect(actor.mSprite.vertexData, deltaTime, staticBox, actor.velocity, contactPoint, contactNormal, contactTime, actor.mPosition))
+	if (DynamicRectVsRect(actor.mSprite.mVertexData, deltaTime, staticBox, actor.mVelocity, contactPoint, contactNormal, contactTime, actor.mPosition))
 	{
 		//if (contactNormal.y > 0) dynamicBox->contact[0] = staticBox; else nullptr;
 		//if (contactNormal.x < 0) dynamicBox->contact[1] = staticBox; else nullptr;
 		//if (contactNormal.y < 0) dynamicBox->contact[2] = staticBox; else nullptr;
 		//if (contactNormal.x > 0) dynamicBox->contact[3] = staticBox; else nullptr;
 
-		if (contactNormal.x >= 1 && contactNormal.x != 0 && actor.velocity.y != 0) {
-			actor.isWallMountableL = true; 
+		if (contactNormal.x >= 1 && contactNormal.x != 0 && actor.mVelocity.y != 0) {
+			isWallMountableL = true;
 		}
 		else {
-			actor.isWallMountableL = false;
-		} 
-		if (contactNormal.x <= -1 && contactNormal.x != 0 && actor.velocity.y != 0) {
-			actor.isWallMountableR = true; 
-		} 
+			isWallMountableL = false;
+		}
+		if (contactNormal.x <= -1 && contactNormal.x != 0 && actor.mVelocity.y != 0) {
+			isWallMountableR = true;
+		}
 		else {
-			actor.isWallMountableR = false;
+			isWallMountableR = false;
 		}
 
 		averagedNormal = glm::mix(averagedNormal, contactNormal, 0.5f);
@@ -131,16 +136,19 @@ bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box&
 			NormalGroundCheck = false;
 		}
 
-		actor.velocity += contactNormal * glm::vec2(std::abs(actor.velocity.x), std::abs(actor.velocity.y)) * (1 - contactTime);
+		actor.mVelocity += contactNormal * glm::vec2(std::abs(actor.mVelocity.x), std::abs(actor.mVelocity.y)) * (1 - contactTime);
 		if (contactNormal.x < 0) {
 		
 		}
+
+		norm = contactNormal;
+
 		return true;
 	}
 	return false;
 }
 
-void CollisionUpdate(const std::vector<GameObject>& blocks, Actor& actor, bool& LeftWallHug, bool& RightWallHug, const float& deltaTime, bool& isGrounded) {
+void CollisionUpdate(const std::vector<GameObject>* blocks, Actor& actor, bool& LeftWallHug, bool& RightWallHug, const float& deltaTime, bool& isGrounded, bool& isWallMountableL, bool& isWallMountableR) {
 
 	static glm::vec2 averagedNormal(0.0f, 0.0f);
 	static bool NormalGroundCheck = false;
@@ -148,68 +156,95 @@ void CollisionUpdate(const std::vector<GameObject>& blocks, Actor& actor, bool& 
 	
 	glm::vec2 contactPoint, contactNormal;
 
+	glm::vec2 contactPoint2, contactNormal2;
+
+
+	contactNormal.y = 125;
+
 	float contactTime = 0;
 
 	std::vector<std::pair<int, float>> colidedBlocks;
 
 	// Bottom left corner of broad-phase-box
-	glm::vec2 A(actor.mPosition.x - 3 * actor.mSprite.vertexData.Size.x, actor.mPosition.y - 3 * actor.mSprite.vertexData.Size.y);
+	glm::vec2 A(actor.mPosition.x - 3 * actor.mSprite.mVertexData.Size.x, actor.mPosition.y - 3 * actor.mSprite.mVertexData.Size.y);
 	// Top right corner of broad-phase-box
-	glm::vec2 B(actor.mPosition.x + 4 * actor.mSprite.vertexData.Size.x, actor.mPosition.y + 4 * actor.mSprite.vertexData.Size.y);
+	glm::vec2 B(actor.mPosition.x + 4 * actor.mSprite.mVertexData.Size.x, actor.mPosition.y + 4 * actor.mSprite.mVertexData.Size.y);
 
 	LeftWallHug = false;
 	RightWallHug = false;
 	BottomWallHug = false;
-	for (int i = 0; i < blocks.size(); i++) {
-		if (blocks[i].mSprite.vertexData.Position.x > A.x && blocks[i].mSprite.vertexData.Position.x < B.x && blocks[i].mSprite.vertexData.Position.y > A.y && blocks[i].mSprite.vertexData.Position.y < B.y && actor.isCollidable == true) {
-			if (!blocks[i].isDeathTrigger && blocks[i].isCollidable == true) {
-				if (DynamicRectVsRect(actor.mSprite.vertexData, deltaTime, blocks[i].mSprite.vertexData, actor.velocity, contactPoint, contactNormal, contactTime, actor.mPosition)) {
+	for (int i = 0; i < blocks->size(); i++) {
+		if (blocks->at(i).mSprite.mVertexData.Position.x > A.x && blocks->at(i).mSprite.mVertexData.Position.x < B.x && blocks->at(i).mSprite.mVertexData.Position.y > A.y && blocks->at(i).mSprite.mVertexData.Position.y < B.y && actor.mIsCollidable == true) {
+			if (!blocks->at(i).mIsDeathTrigger && blocks->at(i).mIsCollidable == true) {
+				if (DynamicRectVsRect(actor.mSprite.mVertexData, deltaTime, blocks->at(i).mSprite.mVertexData, actor.mVelocity, contactPoint, contactNormal, contactTime, actor.mPosition)) {
 					colidedBlocks.push_back({ i, contactTime });
 				}
-				if (blocks[i].mSprite.vertexData.Position.x == actor.mPosition.x + actor.mSprite.vertexData.Size.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !isGrounded) {
-					RightWallHug = RectVsRect(glm::vec2(actor.mPosition.x + actor.mSprite.vertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
+				if (blocks->at(i).mSprite.mVertexData.Position.x == actor.mPosition.x + actor.mSprite.mVertexData.Size.x && actor.mPosition.y < blocks->at(i).mSprite.mVertexData.Position.y + blocks->at(i).mSprite.mVertexData.Size.y && actor.mPosition.y + actor.mSprite.mVertexData.Size.y > blocks->at(i).mSprite.mVertexData.Position.y && !isGrounded) {
+					RightWallHug = RectVsRect(glm::vec2(actor.mPosition.x + actor.mSprite.mVertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.mVertexData.Size, blocks->at(i).mSprite.mVertexData.Position, blocks->at(i).mSprite.mVertexData.Size);
 				}
-				if (blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x == actor.mPosition.x && actor.mPosition.y < blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y && actor.mPosition.y + actor.mSprite.vertexData.Size.y > blocks[i].mSprite.vertexData.Position.y && !isGrounded) {
-					LeftWallHug = RectVsRect(glm::vec2(actor.mPosition.x - actor.mSprite.vertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
+				if (blocks->at(i).mSprite.mVertexData.Position.x + blocks->at(i).mSprite.mVertexData.Size.x == actor.mPosition.x && actor.mPosition.y < blocks->at(i).mSprite.mVertexData.Position.y + blocks->at(i).mSprite.mVertexData.Size.y && actor.mPosition.y + actor.mSprite.mVertexData.Size.y > blocks->at(i).mSprite.mVertexData.Position.y && !isGrounded) {
+					LeftWallHug = RectVsRect(glm::vec2(actor.mPosition.x - actor.mSprite.mVertexData.Size.x / 2, actor.mPosition.y), actor.mSprite.mVertexData.Size, blocks->at(i).mSprite.mVertexData.Position, blocks->at(i).mSprite.mVertexData.Size);
 				} 
-				if (blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y == actor.mPosition.y && actor.mPosition.x < blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x && actor.mPosition.x + actor.mSprite.vertexData.Size.x > blocks[i].mSprite.vertexData.Position.x) {
-					BottomWallHug = RectVsRect(glm::vec2(actor.mPosition.x, actor.mPosition.y - actor.mSprite.vertexData.Size.y / 2), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
+				if (blocks->at(i).mSprite.mVertexData.Position.y + blocks->at(i).mSprite.mVertexData.Size.y == actor.mPosition.y && actor.mPosition.x < blocks->at(i).mSprite.mVertexData.Position.x + blocks->at(i).mSprite.mVertexData.Size.x && actor.mPosition.x + actor.mSprite.mVertexData.Size.x > blocks->at(i).mSprite.mVertexData.Position.x) {
+					BottomWallHug = RectVsRect(glm::vec2(actor.mPosition.x, actor.mPosition.y - actor.mSprite.mVertexData.Size.y / 2), actor.mSprite.mVertexData.Size, blocks->at(i).mSprite.mVertexData.Position, blocks->at(i).mSprite.mVertexData.Size);
 				}
 			}
-			else if (blocks[i].isDeathTrigger) {
+			else if (blocks->at(i).mIsDeathTrigger) {
 				Box AABB;
-				AABB.Position = blocks[i].mTriggerAABBPos;
-				AABB.Size = blocks[i].mTriggerAABBSize;
-				if (DynamicRectVsRect(actor.mSprite.vertexData, deltaTime, AABB, actor.velocity, contactPoint, contactNormal, contactTime, actor.mPosition)) {
-					if (blocks[i].isCollidable) {
+				AABB.Position = blocks->at(i).mTriggerAABBPos;
+				AABB.Size = blocks->at(i).mTriggerAABBSize;
+				if (DynamicRectVsRect(actor.mSprite.mVertexData, deltaTime, AABB, actor.mVelocity, contactPoint2, contactNormal2, contactTime, actor.mPosition)) {
+					if (blocks->at(i).mIsCollidable) {
 						colidedBlocks.push_back({ i, contactTime });
 					}
 					actor.mDead = true;
+					actor.mDiedFromTrigger = true;
 				}
-				if (blocks[i].mSprite.vertexData.Position.y + blocks[i].mSprite.vertexData.Size.y == actor.mPosition.y && actor.mPosition.x < blocks[i].mSprite.vertexData.Position.x + blocks[i].mSprite.vertexData.Size.x && actor.mPosition.x + actor.mSprite.vertexData.Size.x > blocks[i].mSprite.vertexData.Position.x) {
-					if (blocks[i].isCollidable) {
-						BottomWallHug = RectVsRect(glm::vec2(actor.mPosition.x, actor.mPosition.y - actor.mSprite.vertexData.Size.y / 2), actor.mSprite.vertexData.Size, blocks[i].mSprite.vertexData.Position, blocks[i].mSprite.vertexData.Size);
+				if (blocks->at(i).mSprite.mVertexData.Position.y + blocks->at(i).mSprite.mVertexData.Size.y == actor.mPosition.y && actor.mPosition.x < blocks->at(i).mSprite.mVertexData.Position.x + blocks->at(i).mSprite.mVertexData.Size.x && actor.mPosition.x + actor.mSprite.mVertexData.Size.x > blocks->at(i).mSprite.mVertexData.Position.x) {
+					if (blocks->at(i).mIsCollidable) {
+						BottomWallHug = RectVsRect(glm::vec2(actor.mPosition.x, actor.mPosition.y - actor.mSprite.mVertexData.Size.y / 2), actor.mSprite.mVertexData.Size, blocks->at(i).mSprite.mVertexData.Position, blocks->at(i).mSprite.mVertexData.Size);
 					}
 				}
 			}
 		}
 	}
 
+	//std::cout << contactNormal.x << ", " << contactNormal.y << std::endl;
+
+
+
 	std::sort(colidedBlocks.begin(), colidedBlocks.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
 		return a.second < b.second;
 		});
 
+	glm::vec2 norm;
+
+	norm.y = 2;
+
+
 	for (auto j : colidedBlocks) {
-		ResolveDynamicRectVsRect(actor.mSprite.vertexData, deltaTime, blocks[j.first].mSprite.vertexData, actor.velocity, actor, averagedNormal, NormalGroundCheck);
+		ResolveDynamicRectVsRect(actor.mSprite.mVertexData, deltaTime, blocks->at(j.first).mSprite.mVertexData, actor.mVelocity, actor, averagedNormal, NormalGroundCheck, isWallMountableL, isWallMountableR, norm);
 	}
 
-	if (BottomWallHug && NormalGroundCheck && actor.velocity.y == 0.0f) {
+	if (norm.y == 1) {
+		//std::cout << "Grounded" << std::endl;
 		isGrounded = true;
 	}
 	else {
+		//std::cout << "Grounded not" << std::endl;
 		isGrounded = false;
 	}
-	actor.mPosition += actor.velocity * deltaTime;
+
+	//std::cout << glm::to_string(norm) << std::endl;
+
+	//if (BottomWallHug && NormalGroundCheck && actor.mVelocity.y == 0.0f) {
+	//	isGrounded = true;
+	//}
+	//else {
+	//	isGrounded = false;
+	//}
+	actor.mPosition += actor.mVelocity * deltaTime;
+
 
 	actor.mPosition = glm::vec2(float(std::round(actor.mPosition.x * 1000)) / 1000.0f, float(std::round(actor.mPosition.y * 1000)) / 1000.0f);
 }

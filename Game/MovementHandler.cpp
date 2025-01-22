@@ -23,189 +23,199 @@ void MovementHandler::Slam(float& deltaTime, const float& slamSpeed, const float
 	}
 
 }
-void MovementHandler::Update(float& deltaTime, Actor& actor) {
-	if ((!actor.isSucked && !actor.isConsumedByVoid && !actor.mEscaped && !actor.isSuckedPortal)) {
 
+void MovementHandler::FinishDoubleJump() {
+	doubleJumpTimer = std::chrono::time_point<std::chrono::steady_clock>{};
+}
+
+void MovementHandler::FinishJump() {
+	jumpTimer = std::chrono::time_point<std::chrono::steady_clock>{};
+}
+
+void MovementHandler::Update(float& deltaTime, Actor& actor, const bool& started) {
+	if ((!actor.mIsSucked && !actor.mConsumedByBlackHole && !actor.mEscaped && !actor.mIsSuckedPortal) && started) {
+
+		mLast_mCanDoubleJump = mCanDoubleJump;
 		// Gravity and wall stick vvv
-		if (canWallStick) {
-			actor.velocity.y = -125.0f;
+		if (mCanWallStick) {
+			actor.mVelocity.y = -125.0f;
 		}
 
-		if (actor.velocity.y <= 0.0f) {
-			actor.velocity.y -= 1920.0f * deltaTime;
+		if (actor.mVelocity.y <= 0.0f) {
+			actor.mVelocity.y -= 1920.0f * deltaTime;
 		}
-		else if (actor.velocity.y > 0.0f) {
-			actor.velocity.y -= 1440.0f * deltaTime;
+		else if (actor.mVelocity.y > 0.0f) {
+			actor.mVelocity.y -= 1440.0f * deltaTime;
 		}
 		// Gravity and wall stick ^^^
 
 		// Side movement vvv
-		if (KeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] && !actor.mDead) {
-			if (isGrounded) {
-				if (!(actor.velocity.x + -4000.0f * deltaTime < -500.0f)) {
-					Move(actor.velocity, glm::vec2(-4000.0f, 0.0f) * deltaTime);
+		if (mKeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] && !actor.mDead) {
+			if (mIsGrounded) {
+				if (!(actor.mVelocity.x + -4000.0f * deltaTime < -500.0f)) {
+					Move(actor.mVelocity, glm::vec2(-4000.0f, 0.0f) * deltaTime);
 				}
 			}
 			else {
-				if (!(actor.velocity.x + -1440.0f * deltaTime < -500.0f)) {
-					Move(actor.velocity, glm::vec2(-1440.0f, 0.0f) * deltaTime);
+				if (!(actor.mVelocity.x + -1440.0f * deltaTime < -500.0f)) {
+					Move(actor.mVelocity, glm::vec2(-1440.0f, 0.0f) * deltaTime);
 				}
 			}
-			lookDirection = LookDirections::LEFT;
+			mLookDirection = LookDirections::LEFT;
 		}
-		if (KeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)] && !actor.mDead) {
-			if (isGrounded) {
-				if (!(actor.velocity.x + 4000.0f * deltaTime > 500.0f)) {
-					Move(actor.velocity, glm::vec2(4000.0f, 0.0f) * deltaTime);
+		if (mKeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)] && !actor.mDead) {
+			if (mIsGrounded) {
+				if (!(actor.mVelocity.x + 4000.0f * deltaTime > 500.0f)) {
+					Move(actor.mVelocity, glm::vec2(4000.0f, 0.0f) * deltaTime);
 				}
 			}
 			else {
-				if (!(actor.velocity.x + 1440.0f * deltaTime > 500.0f)) {
-					Move(actor.velocity, glm::vec2(1440.0f, 0.0f) * deltaTime);
+				if (!(actor.mVelocity.x + 1440.0f * deltaTime > 500.0f)) {
+					Move(actor.mVelocity, glm::vec2(1440.0f, 0.0f) * deltaTime);
 				}
 			}
-			lookDirection = LookDirections::RIGHT;
+			mLookDirection = LookDirections::RIGHT;
 		}
 		// Side movement ^^^
 
-		if (Sign(actor.velocity.x) == -1) {
-			lookDirection = LookDirections::LEFT;
+		if (Sign(actor.mVelocity.x) == -1) {
+			mLookDirection = LookDirections::LEFT;
 		}
-		else if (Sign(actor.velocity.x) == 1) {
-			lookDirection = LookDirections::RIGHT;
+		else if (Sign(actor.mVelocity.x) == 1) {
+			mLookDirection = LookDirections::RIGHT;
 		}
 
 
 		// Slam and slide vvv
-		if (KeyboadStates[static_cast<int>(MovementState::DUCK)] && !actor.mDead) {
+		if (mKeyboadStates[static_cast<int>(MovementState::DUCK)] && !actor.mDead) {
 
-			if (duckOneShot) {
-				if (!isGrounded) { 
-					isSlamming = true;
-					canDoubleJump = false;
-					duckOneShot = false;
+			if (mDuckOneShot) {
+				if (!mIsGrounded) { 
+					mIsSlamming = true;
+					mCanDoubleJump = false;
+					mDuckOneShot = false;
 				}
-				if (isGrounded && (actor.velocity.x > 200.0f || actor.velocity.x < -200.0f)) {
-					slideDirection = Sign(actor.velocity.x);
-					isSliding = true;
-					duckOneShot = false;
+				if (mIsGrounded && (actor.mVelocity.x > 200.0f || actor.mVelocity.x < -200.0f)) {
+					slideDirection = Sign(actor.mVelocity.x);
+					mIsSliding = true;
+					mDuckOneShot = false;
 				}
 			}
 			
 		}
 
 
-		if (!KeyboadStates[static_cast<int>(MovementState::DUCK)] || !isGrounded) {
+		if (!mKeyboadStates[static_cast<int>(MovementState::DUCK)] || !mIsGrounded) {
 			slideOneShot = true;
 		}
 
-		if (KeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] && slideDirection == 1 && !actor.mDead) {
-			isSliding = false;
+		if (mKeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] && slideDirection == 1 && !actor.mDead) {
+			mIsSliding = false;
 		}
 
-		if (KeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)] && slideDirection == -1 && !actor.mDead) {
-			isSliding = false;
+		if (mKeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)] && slideDirection == -1 && !actor.mDead) {
+			mIsSliding = false;
 		}
 
 
-		if (!KeyboadStates[static_cast<int>(MovementState::DUCK)]) {
+		if (!mKeyboadStates[static_cast<int>(MovementState::DUCK)]) {
 			frictionModifier = 7.2f;
-			isSliding = false; 
+			mIsSliding = false; 
 		}
 
 
-		if (isSlamming) {
-			Slam(deltaTime, 5000.0f, 2000.0f, actor.velocity);
+		if (mIsSlamming) {
+			Slam(deltaTime, 5000.0f, 2000.0f, actor.mVelocity);
 		}
 
-		if (isSliding) {
-			if (slideOneShot && isGrounded) {
+		if (mIsSliding) {
+			if (slideOneShot && mIsGrounded) {
 				frictionModifier = 0.25f;
-				actor.velocity.x = actor.velocity.x + 200.0f * slideDirection;
+				actor.mVelocity.x = actor.mVelocity.x + 200.0f * slideDirection;
 				slideOneShot = false;
 			}
 		}
 		
 
-		if (isGrounded || (!isGrounded && canWallStick)) {
-			isSlamming = false;
+		if (mIsGrounded || (!mIsGrounded && mCanWallStick)) {
+			mIsSlamming = false;
 		}
 
 
 		// Slam and slide ^^^
 
 		// Jumping, wall jumping, double jumping vvv
-		if (KeyboadStates[static_cast<int>(MovementState::SPACE)] && !actor.mDead) {
-			if (spacebarOneShot)
+		if (mKeyboadStates[static_cast<int>(MovementState::SPACE)] && !actor.mDead) {
+			if (mSpacebarOneShot)
 			{
-				if (canWallStick) {
+				if (mCanWallStick) {
 					isWallJumping = true;
 				}
 				
 				jumpBufferTimer = std::chrono::high_resolution_clock::now();
 				
-				if (!isGrounded && !canWallStick && canDoubleJump) {
-					canDoubleJump = false;
-					actor.velocity.y = 320.0f;
+				if (!mIsGrounded && !mCanWallStick && mCanDoubleJump) {
+					mCanDoubleJump = false;
+					actor.mVelocity.y = 320.0f;
 					doubleJumpTimer = std::chrono::high_resolution_clock::now();
 				}
 			}
-			spacebarOneShot = false;
+			mSpacebarOneShot = false;
 			if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - doubleJumpTimer).count() < doubleJumpTime + deltaTime * 1000) {
-				Jump(deltaTime, 3000.0f, actor.velocity);
+				Jump(deltaTime, 3000.0f, actor.mVelocity);
 			}
 
 			if ((isJumping && std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - jumpTimer).count() < jumpTime + deltaTime * 1000)) {
-				Jump(deltaTime, 3000.0f, actor.velocity);
+				Jump(deltaTime, 3000.0f, actor.mVelocity);
 			}
 
 			if (isWallJumping && std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - wallJumpTimer).count() < wallJumpTime + deltaTime * 1000) {
-				Jump(deltaTime, 2000.0f, actor.velocity);
+				Jump(deltaTime, 2000.0f, actor.mVelocity);
 			}
 		}
-		if (!KeyboadStates[static_cast<int>(MovementState::SPACE)]) { 
+		if (!mKeyboadStates[static_cast<int>(MovementState::SPACE)]) { 
 			isJumping = false;
 			isWallJumping = false;
 		}
 		
-		if (canWallStick && isWallJumping) {
-			canDoubleJump = true;
+		if (mCanWallStick && isWallJumping) {
+			mCanDoubleJump = true;
 			wallJumpTimer = std::chrono::high_resolution_clock::now();
-			actor.velocity.y = 320.0f;
-			if (actor.isWallMountableL) {
-				actor.velocity.x = 300.0f;
+			actor.mVelocity.y = 320.0f;
+			if (mIsWallMountableL) {
+				actor.mVelocity.x = 300.0f;
 			}
-			else if (actor.isWallMountableR) {
-				actor.velocity.x = -300.0f;
+			else if (mIsWallMountableR) {
+				actor.mVelocity.x = -300.0f;
 			}
-			actor.isWallMountableL = false;
-			actor.isWallMountableR = false;
+			mIsWallMountableL = false;
+			mIsWallMountableR = false;
 		}
 
-		if (((actor.isWallMountableR && RightWallHug) || (actor.isWallMountableL && LeftWallHug)) && !(KeyboadStates[static_cast<int>(MovementState::SPACE)] && actor.velocity.y > 0.0f)) {
-			canWallStick = true;
-			canDoubleJump = true;
+		if (((mIsWallMountableR && mRightWallHug) || (mIsWallMountableL && mLeftWallHug)) && !(mKeyboadStates[static_cast<int>(MovementState::SPACE)] && actor.mVelocity.y > 0.0f)) {
+			mCanWallStick = true;
+			mCanDoubleJump = true;
 		}
 		else {
-			canWallStick = false;
+			mCanWallStick = false;
 		}
 
-		if (isGrounded 
+		if (mIsGrounded 
 				&& std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - jumpBufferTimer).count() < jumpBufferTime + deltaTime * 1000) {
-			//Jump();
-			canDoubleJump = true;
+			jumpBufferTimer = std::chrono::time_point<std::chrono::steady_clock>{};
+			mCanDoubleJump = true;
 			isJumping = true;
 			jumpTimer = std::chrono::high_resolution_clock::now();
-			actor.velocity.y += 320.0f;
-			isGrounded = false;
+			actor.mVelocity.y += 320.0f;
+			mIsGrounded = false;
 		}
 
-		if (isGrounded) {
-			canDoubleJump = true;
+		if (mIsGrounded) {
+			mCanDoubleJump = true;
 			isJumping = false;
 		}
 
-		if ((actor.isWallMountableR && RightWallHug) || (actor.isWallMountableL && LeftWallHug)) {
+		if ((mIsWallMountableR && mRightWallHug) || (mIsWallMountableL && mLeftWallHug)) {
 			isWallJumping = false;
 		}
 
@@ -213,23 +223,23 @@ void MovementHandler::Update(float& deltaTime, Actor& actor) {
 
 		// Friction and limits vvvq
 
-		if (isGrounded) {
-			float nextActorVelocityX = actor.velocity.x *= 1.0f - (frictionModifier * deltaTime);
+		if (mIsGrounded) {
+			float nextActorVelocityX = actor.mVelocity.x *= 1.0f - (frictionModifier * deltaTime);
 			if (nextActorVelocityX > 0.1f || nextActorVelocityX < -0.1f) {
-				actor.velocity.x = nextActorVelocityX;
+				actor.mVelocity.x = nextActorVelocityX;
 			}
 			else {
-				actor.velocity.x = 0.0f;
+				actor.mVelocity.x = 0.0f;
 			}
 		}
-		if (actor.velocity.x > 800.0f) {
-			actor.velocity.x = 800.0f;
+		if (actor.mVelocity.x > 800.0f) {
+			actor.mVelocity.x = 800.0f;
 		}
-		if (actor.velocity.x < -800.0f) {
-			actor.velocity.x = -800.0f;
+		if (actor.mVelocity.x < -800.0f) {
+			actor.mVelocity.x = -800.0f;
 		}
-		if (actor.velocity.y < -1200.0f) {
-			actor.velocity.y = -1200.0f;
+		if (actor.mVelocity.y < -1200.0f) {
+			actor.mVelocity.y = -1200.0f;
 		}
 
 		// Friction and limits ^^^

@@ -11,9 +11,7 @@ public:
 
 	virtual void Update();
 
-	float movementSpeed{ 300.0f };
+	virtual void Reset();
 
-	glm::vec2 velocity{ 0.0f, 0.0f };
-
-	void SetSprite(const Sprite& sprite);
+	glm::vec2 mVelocity{ 0.0f, 0.0f };
 };

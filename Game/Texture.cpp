@@ -23,18 +23,18 @@ void TextureHandler::InitTextureArray(const GLenum& internalformat, const GLsize
 
 	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, internalformat, width, height, depth);
 
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    layersUsed[TextureSlotsTaken] = 0;
+    mLayersUsed[TextureSlotsTaken] = 0;
 	TextureSlotsTaken++;
 }
 
 void TextureHandler::LoadTexture(SDL_Surface* surface, const GLenum& internalformat, const int& layer, const int& slot) {
 	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, surface->w, surface->h, 1, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
     SDL_DestroySurface(surface);
-    layersUsed[slot]++;
+    mLayersUsed[slot]++;
 }
 
 std::vector<SDL_Surface*> TextureHandler::CutTileset(SDL_Surface* tileset, const int& tileWidth, const int& tileHeight) {
@@ -93,4 +93,24 @@ SDL_Surface* TextureHandler::FlipSurfaceVertically(SDL_Surface* surface) {
     }
 
     return flipped;
+}
+
+void TextureHandler::CutAndLoad(const char* filepath, int& offsetValue, const int& arrayIndex, const int& resolution) {
+    SDL_Surface* tilesetSurface = LoadSurface(filepath);
+    std::vector<SDL_Surface*> cutTileset = CutTileset(tilesetSurface, resolution, resolution);
+    SDL_DestroySurface(tilesetSurface);
+    offsetValue = mLayersUsed[arrayIndex];
+    for (int i = 0; i < cutTileset.size(); i++) {
+        LoadTexture(cutTileset[i], GL_RGBA, mLayersUsed[arrayIndex], 0);
+    }
+}
+
+void TextureHandler::LoadAll(const int& arrayIndex) {
+    CutAndLoad((const char*)"assets/Level/tiles128upA.png", mBaseT_Offset, arrayIndex, 128);
+    //CutAndLoad((const char*)"assets/UI/test.png", mUI_BordersT_Offset, arrayIndex, 16);
+	CutAndLoad((const char*)"assets/UI/Border All 2_Alpha.png", mUI_BordersT_Offset, arrayIndex, 16);
+
+    CutAndLoad((const char*)"assets/UI/Arrows.png", mUI_ArrowsT_Offset, arrayIndex, 16);
+
+    CutAndLoad((const char*)"assets/Actor/Orb128_2.png", mOrbT_Offset, arrayIndex, 128);
 }

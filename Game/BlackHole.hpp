@@ -17,22 +17,23 @@ public:
 
 	~BlackHole();
 
-	void Update(std::vector<GameObject>& blocks, Actor& actor, const float& deltaTime, Animation& loopAnim, Animation& birthAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle);
+	void Update(std::vector<GameObject>* blocks, Actor& actor, const float& deltaTime, Animation& loopAnim, Animation& birthAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle, const float globalSFXVolumeModifier);
 
-	glm::vec2 AnimationSize{ 0.0f, 0.0f };
-
+	void Reset();
+	 
+	glm::vec2 AABBSize { 350.0f, 1080.0f };
+	glm::vec2 epicenterAABBPos{ 0.0f, 520.0f };
+	glm::vec2 epicenterAABBSize{ 40.0f, 40.0f };
+private: 
 	bool isBorn{ false };
 	bool loopTimerOneShot{ false };
 	bool birthTimerOneShot{ false };
 	int idleVolume{ 0 };
-	glm::vec2 AABBSize { 100.0f, 1080.0f };
 
-private: 
 	glm::vec2 AABBPos { 0.0f, 0.0f };
 
-	glm::vec2 EpicenterAABBSize{ 40.0f, 40.0f };
-	glm::vec2 EpicenterAABBPos{ 0.0f, 500.0f };
 	float AABBVelocityMultiplier { 0.0f };
+
 	// squared distance of idle volume range
 	float idleRadius{ 1250000.0f };
 

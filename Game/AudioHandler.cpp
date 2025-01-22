@@ -1,4 +1,5 @@
 #include "AudioHandler.hpp"
+#include <iostream>
 
 AudioHandler::AudioHandler() {
 }
@@ -16,9 +17,15 @@ AudioHandler::~AudioHandler() {
 	Mix_FreeChunk(BlackHoleIdle);
 	Mix_FreeChunk(PortalIdle);
 	Mix_FreeChunk(FellDown);
+	Mix_FreeChunk(ButtonHover);
+	Mix_FreeChunk(ButtonClick);
+	Mix_FreeChunk(EscapeClick);
+
+	Mix_FreeChunk(DoubleJumpRecharge);
 
 	Mix_FreeMusic(IntroMusic);
 	Mix_FreeMusic(LoopMusic);
+	Mix_FreeMusic(LoopMenuMusic);
 
 	Mix_FreeChunk(RunSounds[0]);
 	Mix_FreeChunk(RunSounds[1]);
@@ -54,8 +61,15 @@ void AudioHandler::LoadSounds() {
 	PortalIdle =     Mix_LoadWAV("assets/Sounds/PortalIdle.wav");
 	FellDown =       Mix_LoadWAV("assets/Sounds/Died.wav");
 
+	ButtonHover = Mix_LoadWAV("assets/Sounds/UI_Menu_Move_2ch_v1_01.wav");
+	ButtonClick = Mix_LoadWAV("assets/Sounds/UI_Menu_Select_2ch_v3_07.wav");
+	EscapeClick = Mix_LoadWAV("assets/Sounds/EscapeClick.wav");
+
+	DoubleJumpRecharge = Mix_LoadWAV("assets/Sounds/UI_InGame_FD_UnReadyUp_3p_2ch_v1_01.wav");
+
 	IntroMusic = Mix_LoadMUS("assets/Sounds/The Cyber Grind - (Intro only).wav");
 	LoopMusic =  Mix_LoadMUS("assets/Sounds/The Cyber Grind - (loop).wav");
+	LoopMenuMusic = Mix_LoadMUS("assets/Sounds/Try and Solve This Loop.wav");
 
 	RunSounds[0] = Mix_LoadWAV("assets/Sounds/Run01.wav");
 	RunSounds[1] = Mix_LoadWAV("assets/Sounds/Run02.wav");
@@ -100,4 +114,17 @@ void AudioHandler::PlayNextLandHardSound() {
 	}
 	Mix_PlayChannel(7, LandHardSounds[landHardSoundIndex], 0);
 	landHardSoundIndex++;
+}
+
+void AudioHandler::SetGlobalSFXVolume(int volume) {
+	for (int i = 0; i < Mix_AllocateChannels(-1); ++i) {
+		if (i != 4 && i != 10) {
+			Mix_Volume(i, static_cast<int>(128 * float(volume / 10.0f)));
+		}
+	}
+	mGlobalSFXVolumeModifier = float(volume / 10.0f);
+}
+
+void AudioHandler::SetGlobalMusicVolume(int volume) {
+	Mix_VolumeMusic(static_cast<int>(mInitialMusicVolume * float(volume / 10.0f)));
 }

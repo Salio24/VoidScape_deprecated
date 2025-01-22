@@ -16,28 +16,32 @@ public:
 
 	glm::vec2 mPosition{ 0.0f, 0.0f };
 
-	glm::vec2 tempVelocity{ 0.0f, 0.0f };
+	glm::vec2 mFlyVelocity{ 0.0f, 0.0f };
 
-	glm::vec2 flyDirectionNormalized{ 0.0f, 0.0f };
+	glm::vec2 mFlyDirectionNormalized{ 0.0f, 0.0f };
 
 	glm::mat4 mModelMatrix{ glm::mat4(1.0f) }; 
 
 	glm::vec2 mTriggerAABBPos{ 0.0f, 0.0f };
 	glm::vec2 mTriggerAABBSize{ 0.0f, 0.0f };
 
-	float flyAngleTarget{ -1.0f };
+	float mFlyAngleOrientation{ 0.0f };
 
-	float flyAngle{ 0.0f };
+	float mFlyAngleTarget{ -1.0f };
 
-	bool isDestroyed{ false };
+	float mFlyAngle{ 0.0f };
 
-	bool isVisible{ false }; 
+	bool mIsDestroyed{ false };
 
-	bool isSucked{ false };
+	bool mIsVisible{ false }; 
 
-	bool isDeathTrigger{ false };
+	bool mIsSucked{ false };
 
-	bool isConsumedByVoid{ false };
+	bool mIsDeathTrigger{ false };
 
-	bool isCollidable{ false };
+	//bool mIsConsumedByVoid{ false };
+
+	bool mConsumedByBlackHole{ false };
+
+	bool mIsCollidable{ false };
 };

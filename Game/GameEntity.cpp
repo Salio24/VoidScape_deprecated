@@ -12,6 +12,6 @@ void GameEntity::Update() {
 
 }
 
-void GameEntity::SetSprite(const Sprite& sprite) {
-	mSprite = sprite;
+void GameEntity::Reset() {
+
 }

@@ -26,19 +26,17 @@ public:
 
 	void Transform();
 
-	float movementSpeed{500.0f};
+	void Reset(glm::vec2& animSize, const glm::vec2& startingPosition);
 
-	MovementDirection Direction{ MovementDirection::None };
-
-	glm::vec2 mRelativePosition{ 0.0f, 0.0f };
+	MovementDirection mDirection{ MovementDirection::None };
 
 	glm::vec2 mScreenPosition{ 0.0f, 0.0f };
 
-	float flyAngleTargetPortal{ -1.0f };
-	float flyAnglePortal{ 0.0f };
+	float mFlyAngleTargetPortal{ -1.0f };
+	float mFlyAnglePortal{ 0.0f };
 
-	bool isWallMountableL{ false };
-	bool isWallMountableR{ false };
+	bool mIsWallMountableL{ false };
+	bool mIsWallMountableR{ false };
 
 	bool mEscaped{ false };
 
@@ -46,8 +44,16 @@ public:
 
 	bool mDeadSoundOneShot{ true };
 
-	bool isSuckedPortal{ false };
+	bool mFellDown{ false };
+
+	bool mDiedFromTrigger{ false };
+
+	bool mIsSuckedPortal{ false };
 
 	float mSizeMultiplier{ 240.0f };
+
+	Box mDoubleJumpOrb;
+
 private:
+	glm::vec2 relativePosition{ 0.0f, 0.0f };
 };

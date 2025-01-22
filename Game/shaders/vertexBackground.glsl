@@ -6,19 +6,23 @@ layout(location = 3) in int textureIndex;
 
 out vec4 vVertexColor;
 out highp vec2 vTexturePosition;
+out int vLevelBackground;
 flat out int vTextureIndex;
-
 
 uniform mat4 uModelMatrix;
 uniform mat4 uProjectionMatrix;
+uniform int uLevelBackground;
+
+out gl_PerVertex {
+	vec4 gl_Position;
+};
 
 void main() {
 
+	vLevelBackground = uLevelBackground;
 	vVertexColor = vertexColor;
 	vTexturePosition = texturePosition;
 	vTextureIndex = textureIndex;
 
-	vec4 newPosition = uProjectionMatrix * uModelMatrix * vec4(position, 0.0f, 1.0f);
-	gl_Position = vec4(newPosition.x, newPosition.y, newPosition.z, newPosition.w);
-	
+	gl_Position = uProjectionMatrix * uModelMatrix * vec4(position, 0.0, 1.0);
 }

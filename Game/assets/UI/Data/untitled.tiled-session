@@ -1,0 +1,85 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "All.tsx",
+    "expandedProjectPaths": [
+        ".",
+        "Layout"
+    ],
+    "fileStates": {
+        "All.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 3
+        },
+        "Layout/40p.tmx": {
+            "scale": 3,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 191.66666666666666,
+                "y": 343.66666666666663
+            }
+        },
+        "Layout/60p.tmx": {
+            "scale": 1.803515625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 72.63591076456574,
+                "y": -8.039852718215286
+            }
+        },
+        "Layout/Border All 2_Alpha.tsx": {
+            "scaleInDock": 3,
+            "scaleInEditor": 1
+        },
+        "Layout/test.tsx": {
+            "scaleInDock": 1
+        },
+        "Layout/test40.json": {
+            "scale": 2,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 148.75,
+                "y": 299.5
+            }
+        },
+        "Layout/test40.tmx": {
+            "scale": 1.128125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 231.80055401662048,
+                "y": 234.01662049861494
+            }
+        }
+    },
+    "last.exportedFilePath": "C:/Project/VS2022/MyProject/Source/Game/Game/assets/UI/Data/Layout",
+    "last.imagePath": "C:/Project/VS2022/MyProject/Source/Game/Game/assets/UI",
+    "map.height": 27,
+    "map.lastUsedExportFilter": "JSON map files (*.tmj *.json)",
+    "map.lastUsedFormat": "tmx",
+    "map.renderOrder": "3",
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "map.width": 48,
+    "openFiles": [
+        "Layout/60p.tmx",
+        "Layout/Border All 2_Alpha.tsx",
+        "Layout/40p.tmx",
+        "Layout/test40.json",
+        "All.tsx"
+    ],
+    "project": "untitled.tiled-project",
+    "recentFiles": [
+        "Layout/60p.tmx",
+        "Layout/Border All 2_Alpha.tsx",
+        "Layout/40p.tmx",
+        "Layout/test40.json",
+        "All.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    }
+}
