@@ -47,13 +47,13 @@ void BatchRenderer::StartUp(ShaderProgram* program, GLuint& PipelineProgramID) {
 	glVertexAttribPointer(3, 1, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, TextureIndex));
 
 	glEnableVertexArrayAttrib(VAO, 4);
-	glVertexAttribPointer(4, 1, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, FlyAngle));
+	glVertexAttribPointer(4, 1, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, RotationalAngle));
 
 	glEnableVertexArrayAttrib(VAO, 5);
-	glVertexAttribPointer(5, 1, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, FlyOrientation));
+	glVertexAttribPointer(5, 1, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, AngleModifier));
 
 	glEnableVertexArrayAttrib(VAO, 6);
-	glVertexAttribPointer(6, 2, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, Center));
+	glVertexAttribPointer(6, 2, GL_FLOAT, false, sizeof(Box), (const void*)offsetof(Box, TranslateMargin));
 
 	uint32_t indices[maxIndexCount];
 	uint32_t offset = 0;
@@ -81,9 +81,10 @@ void BatchRenderer::ShutDown() {
 	delete[] QuadBuffer;
 }
 
-void BatchRenderer::BeginBatch(const glm::mat4& ProjectionMatrix) {
+void BatchRenderer::BeginBatch(const glm::mat4& ProjectionMatrix, const glm::mat4* modelMatrix) {
 	QuadBufferPtr = QuadBuffer;
 	currentProjectionMatrix = ProjectionMatrix;
+	currentModelMatrix = modelMatrix;
 }
 
 void BatchRenderer::EndBatch() {
@@ -96,7 +97,7 @@ void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size
 	if (indexCount >= maxIndexCount) {
 		EndBatch();
 		Flush();
-		BeginBatch(currentProjectionMatrix);
+		BeginBatch(currentProjectionMatrix, currentModelMatrix);
 	}
 
 	QuadBufferPtr->Position = {position.x, position.y};
@@ -126,178 +127,181 @@ void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size
 	indexCount += 6;
 }
 
-void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size, uint32_t textureID, const glm::vec2& textureSize, const glm::vec2& texturePosition, const bool& drawFliped, const glm::vec4& color) {
+void BatchRenderer::DrawInBatch(const glm::vec2 position, const glm::vec2 size, uint32_t textureID, const glm::vec2 textureSize, const glm::vec2 texturePosition, const float rotationAnlge, const float anlgeModifier, const bool drawFliped, const glm::vec4& color) {
 	if (indexCount >= maxIndexCount) {
 		EndBatch();
 		Flush();
-		BeginBatch(currentProjectionMatrix);
+		BeginBatch(currentProjectionMatrix, currentModelMatrix);
 	}
 
 	if (drawFliped == true) {
-		QuadBufferPtr->Position = { position.x, position.y };
-		QuadBufferPtr->Color = color;
-		QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y };
-		QuadBufferPtr->TextureIndex = textureID;
-		QuadBufferPtr++;
+		if (rotationAnlge == 0.0f) {
+			QuadBufferPtr->Position = { position.x, position.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr++;
 
-		QuadBufferPtr->Position = { position.x + size.x, position.y };
-		QuadBufferPtr->Color = color;
-		QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y };
-		QuadBufferPtr->TextureIndex = textureID;
-		QuadBufferPtr++;
+			QuadBufferPtr->Position = { position.x + size.x, position.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr++;
 
-		QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
-		QuadBufferPtr->Color = color;
-		QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y + textureSize.y };
-		QuadBufferPtr->TextureIndex = textureID;
-		QuadBufferPtr++;
+			QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y + textureSize.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr++;
 
-		QuadBufferPtr->Position = { position.x, position.y + size.y };
-		QuadBufferPtr->Color = color;
-		QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y + textureSize.y };
-		QuadBufferPtr->TextureIndex = textureID;
-		QuadBufferPtr++;
-	}
-	else if (drawFliped == false) {
-		QuadBufferPtr->Position = { position.x, position.y };
-		QuadBufferPtr->Color = color;
-		QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y };
-		QuadBufferPtr->TextureIndex = textureID;
-		QuadBufferPtr++;
+			QuadBufferPtr->Position = { position.x, position.y + size.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y + textureSize.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr++;
+		}
+		else {
+			QuadBufferPtr->Position = { position.x, position.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr->AngleModifier = anlgeModifier;
+			QuadBufferPtr->TranslateMargin = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
+			QuadBufferPtr++;
 
-		QuadBufferPtr->Position = { position.x + size.x, position.y };
-		QuadBufferPtr->Color = color;
-		QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y };
-		QuadBufferPtr->TextureIndex = textureID;
-		QuadBufferPtr++;
+			QuadBufferPtr->Position = { position.x + size.x, position.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr->AngleModifier = anlgeModifier;
+			QuadBufferPtr->TranslateMargin = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
+			QuadBufferPtr++;
 
-		QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
-		QuadBufferPtr->Color = color;
-		QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y + textureSize.y };
-		QuadBufferPtr->TextureIndex = textureID;
-		QuadBufferPtr++;
+			QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y + textureSize.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr->AngleModifier = anlgeModifier;
+			QuadBufferPtr->TranslateMargin = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
+			QuadBufferPtr++;
 
-		QuadBufferPtr->Position = { position.x, position.y + size.y };
-		QuadBufferPtr->Color = color;
-		QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y + textureSize.y };
-		QuadBufferPtr->TextureIndex = textureID;
-		QuadBufferPtr++;
-	}
-
-	indexCount += 6;
-}
-
-void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size, uint32_t textureID, const glm::vec2& textureSize, const glm::vec2& texturePosition, float flyAngle, float flyOrientation) {
-	if (indexCount >= maxIndexCount) {
-		EndBatch();
-		FlushFly();
-		BeginBatch(currentProjectionMatrix);
-	}
-
-	QuadBufferPtr->Position = { position.x, position.y };
-	QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y };
-	QuadBufferPtr->TextureIndex = textureID;
-	QuadBufferPtr->FlyAngle = flyAngle;
-	QuadBufferPtr->FlyOrientation = flyOrientation;
-	QuadBufferPtr->Center = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
-	QuadBufferPtr++;
-
-	QuadBufferPtr->Position = { position.x + size.x, position.y };
-	QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y };
-	QuadBufferPtr->TextureIndex = textureID;
-	QuadBufferPtr->FlyAngle = flyAngle;
-	QuadBufferPtr->FlyOrientation = flyOrientation;
-	QuadBufferPtr->Center = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
-	QuadBufferPtr++;
-
-	QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
-	QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y + textureSize.y };
-	QuadBufferPtr->TextureIndex = textureID;
-	QuadBufferPtr->FlyAngle = flyAngle;
-	QuadBufferPtr->FlyOrientation = flyOrientation;
-	QuadBufferPtr->Center = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
-	QuadBufferPtr++;
-
-	QuadBufferPtr->Position = { position.x, position.y + size.y };
-	QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y + textureSize.y };
-	QuadBufferPtr->TextureIndex = textureID;
-	QuadBufferPtr->FlyAngle = flyAngle;
-	QuadBufferPtr->FlyOrientation = flyOrientation;
-	QuadBufferPtr->Center = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
-	QuadBufferPtr++;
-	
-
-	indexCount += 6;
-}
-
-
-void BatchRenderer::DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::vec4& color, const glm::mat4& ProjectionMatrix, const glm::mat4& ModelMatrix) {
-	BeginBatch(ProjectionMatrix);
-	DrawInBatch(position, size, color);
-	EndBatch();
-	Flush(ModelMatrix);
-}
-
-void BatchRenderer::DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::mat4& ProjectionMatrix, uint32_t textureID, const glm::vec2& textureSize, const glm::vec2& texturePosition, const glm::mat4& ModelMatrix, const bool& drawFliped) {
-	BeginBatch(ProjectionMatrix);
-	DrawInBatch(position, size, textureID, textureSize, texturePosition, drawFliped);
-	EndBatch();
-	Flush(ModelMatrix);
-}
-
-void BatchRenderer::Flush(const glm::mat4& ModelMatrix) {
-	currentProgram->UseInPipeline(currentPipelineProgramID);
-	currentProgram->SetMat4("uModelMatrix", ModelMatrix);
-	currentProgram->SetMat4("uProjectionMatrix", currentProjectionMatrix);
-	currentProgram->SetFloat("flyBlockBool", 0.0f);
-
-	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
-	glBindVertexArray(0);
-	indexCount = 0;
-}
-
-void BatchRenderer::FlushFly() {
-	currentProgram->UseInPipeline(currentPipelineProgramID);
-	currentProgram->SetMat4("uModelMatrix", glm::mat4(1.0f));
-	currentProgram->SetMat4("uProjectionMatrix", currentProjectionMatrix);
-	currentProgram->SetFloat("flyBlockBool", 1.0f);
-
-	glBindVertexArray(VAO);
-	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
-	glBindVertexArray(0);
-	indexCount = 0;
-}
-
-void BatchRenderer::UniformVariableLinkageAndPopulatingWithMatrix(const GLchar* uniformLocation, glm::mat4 matrix, const GLuint& PipelineProgram) {
-	GLint MatrixLocation = glGetUniformLocation(PipelineProgram, uniformLocation);
-	if (MatrixLocation >= 0) {
-		glUniformMatrix4fv(MatrixLocation, 1, GL_FALSE, &matrix[0][0]);
+			QuadBufferPtr->Position = { position.x, position.y + size.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y + textureSize.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr->AngleModifier = anlgeModifier;
+			QuadBufferPtr->TranslateMargin = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
+			QuadBufferPtr++;
+		}
 	}
 	else {
-		std::cerr << "Failed to get uniform location of: " << uniformLocation << std::endl << "Exiting now" << std::endl;
-		exit(EXIT_FAILURE);
+		if (rotationAnlge == 0.0f) {
+			QuadBufferPtr->Position = { position.x, position.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr++;
+
+			QuadBufferPtr->Position = { position.x + size.x, position.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr++;
+
+			QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y + textureSize.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr++;
+
+			QuadBufferPtr->Position = { position.x, position.y + size.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y + textureSize.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr++;
+		}
+		else {
+			QuadBufferPtr->Position = { position.x, position.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr->AngleModifier = anlgeModifier;
+			QuadBufferPtr->TranslateMargin = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
+			QuadBufferPtr++;
+
+			QuadBufferPtr->Position = { position.x + size.x, position.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr->AngleModifier = anlgeModifier;
+			QuadBufferPtr->TranslateMargin = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
+			QuadBufferPtr++;
+
+			QuadBufferPtr->Position = { position.x + size.x, position.y + size.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x + textureSize.x, texturePosition.y + textureSize.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr->AngleModifier = anlgeModifier;
+			QuadBufferPtr->TranslateMargin = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
+			QuadBufferPtr++;
+
+			QuadBufferPtr->Position = { position.x, position.y + size.y };
+			QuadBufferPtr->Color = color;
+			QuadBufferPtr->TexturePosition = { texturePosition.x, texturePosition.y + textureSize.y };
+			QuadBufferPtr->TextureIndex = textureID;
+			QuadBufferPtr->RotationalAngle = rotationAnlge;
+			QuadBufferPtr->AngleModifier = anlgeModifier;
+			QuadBufferPtr->TranslateMargin = { position.x + size.x / 2.0f, position.y + size.y / 2.0f };
+			QuadBufferPtr++;
+		}
 	}
+
+	indexCount += 6;
 }
 
-void BatchRenderer::Test() {
 
-	BeginBatch(app().mCamera.GetProjectionMatrix());
-	DrawInBatch(glm::vec2(100.0f, 100.0f), glm::vec2(100.0f, 100.0f), glm::vec4(1.0f));
+void BatchRenderer::DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::vec4& color, const glm::mat4& ProjectionMatrix, const glm::mat4* ModelMatrix) {
+	BeginBatch(ProjectionMatrix, ModelMatrix);
+	DrawInBatch(position, size, color);
 	EndBatch();
-	
-	currentProgram->UseInPipeline(currentPipelineProgramID);
-	currentProgram->SetMat4("uModelMatrix", glm::mat4(1.0f));
-	currentProgram->SetMat4("uProjectionMatrix", currentProjectionMatrix);
+	Flush();
+}
 
-	currentProgram->SetVec2("center", glm::vec2(150.0f, 150.0f));
-	currentProgram->SetFloat("angle", 45.0f);
-	currentProgram->SetFloat("ad", 1.0f);
+void BatchRenderer::DrawSeperatly(const glm::mat4& ProjectionMatrix, const glm::vec2 position, glm::vec2 size, uint32_t textureID, const glm::vec2 textureSize, const glm::vec2 texturePosition, const float rotationAnlge, const float anlgeModifier, const bool drawFliped, const glm::mat4* ModelMatrix, const glm::vec4& color) {
+	BeginBatch(ProjectionMatrix, ModelMatrix);
+	DrawInBatch(position, size, textureID, textureSize, texturePosition, rotationAnlge, anlgeModifier, drawFliped, color);
+	EndBatch();
+	Flush();
+}
+
+void BatchRenderer::Flush() {
+	currentProgram->UseInPipeline(currentPipelineProgramID);
+	currentProgram->SetMat4("uProjectionMatrix", currentProjectionMatrix);
+	if (currentModelMatrix != nullptr) {
+		currentProgram->SetMat4("uModelMatrix", *currentModelMatrix);
+	}
+	else {
+		currentProgram->SetMat4("uModelMatrix", glm::mat4(1.0f));
+	}
 
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);
 	glBindVertexArray(0);
 	indexCount = 0;
-
 }

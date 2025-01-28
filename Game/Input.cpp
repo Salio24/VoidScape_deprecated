@@ -26,8 +26,8 @@ void InputManager::Input() {
 			app().mQuit = true;
 		}
 		else if (e.type == SDL_EVENT_MOUSE_MOTION) {
-			mousePos.x = (e.motion.x / (float)app().mWindowWidth - (float)app().viewportOffset.x / (float)app().mWindowWidth) * 1920.0f;
-			mousePos.y = (1.0f - e.motion.y / (float)app().mWindowHeight + (float)app().viewportOffset.y / (float)app().mWindowHeight) * 1080.0f;
+			mousePos.x = (e.motion.x / (float)app().mWindowWidth - (float)app().mSettings.viewportOffset.x / (float)app().mWindowWidth) * 1920.0f;
+			mousePos.y = (1.0f - e.motion.y / (float)app().mWindowHeight + (float)app().mSettings.viewportOffset.y / (float)app().mWindowHeight) * 1080.0f;
 			//680.680 
 			//1000.760
 
@@ -92,8 +92,7 @@ void InputManager::Input() {
 			app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)] = true;
 		}
 		if (state[SDL_SCANCODE_P]) {
-			//app().mSceneManager.mUIScenes.mTitleScreenActive = false;
-			app().mPause = false;
+			app().testing = true;
 		}
 		if (state[SDL_SCANCODE_O]) {
 			//app().mSceneManager.mUIScenes.mTitleScreenActive = true;

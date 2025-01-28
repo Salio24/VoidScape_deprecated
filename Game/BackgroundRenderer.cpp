@@ -185,6 +185,9 @@ void BackgroundRenderer::LoadLevelBackground(ShaderProgram* shader, ShaderProgra
 
 	glActiveTexture(GL_TEXTURE31);
 
+	// MOVE TO INIT!!!
+
+
 	glGenFramebuffers(1, &FBO);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);

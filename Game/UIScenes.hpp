@@ -9,7 +9,7 @@
 #include <vector>
 #include <random>
 #include <glm/glm.hpp>
-#include <map>
+#include <unordered_map>
 #include <cmath>
 
 enum class MenuTabs {
@@ -64,16 +64,11 @@ public:
 	
 	glm::vec2 mPosition{ 0.0f, 0.0f };
 
+	glm::vec2 mSize{ 0.0f, 0.0f };
+
 	glm::vec2 mTriggerPos{ 0.0f, 0.0f };
 
 	glm::vec2 mTriggerSize{ 0.0f, 0.0f };
-	
-	glm::vec2 mSize{ 0.0f, 0.0f };
-
-	glm::vec2 mTriggerPosInitial{ 0.0f, 0.0f };
-
-	glm::vec2 mTriggerSizeInitial{ 0.0f, 0.0f };
-
 
 	glm::vec2 mCenterPoint{ 0.0f, 0.0f };
 	

@@ -9,6 +9,8 @@
 #include <random>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/exterior_product.hpp>
+#include <cmath>
+#include <numbers>
 
 App::App() : mAnimationHandler(mTextureHandler) {
 	StartUp();
@@ -35,30 +37,34 @@ void App::StartUp() {
 		if (bounds.h < 720) {
 			mWindowHeight = 480;
 			mWindowWidth = 854;
-			currentResolutionIndex = 0;
+			mSettings.currentResolutionIndex = 0;
 		}
 		else {
 			mWindowHeight = 720;
 			mWindowWidth = 1280;
-			currentResolutionIndex = 1;
+			mSettings.currentResolutionIndex = 1;
 		}
 	}
 
-	screenSize.x = bounds.w;
-	screenSize.y = bounds.h;
+	mSettings.screenSize.x = bounds.w;
+	mSettings.screenSize.y = bounds.h;
 
-	resolutions.push_back(glm::ivec2(854, 480));
-	resolutions.push_back(glm::ivec2(1280, 720));
-	resolutions.push_back(glm::ivec2(1366, 768));
-	resolutions.push_back(glm::ivec2(1600, 900));
-	resolutions.push_back(glm::ivec2(1920, 1080));
-	resolutions.push_back(glm::ivec2(2560, 1440));
-	resolutions.push_back(glm::ivec2(3840, 2160));
-	resolutions.push_back(glm::ivec2(5120, 2880));
-	resolutions.push_back(glm::ivec2(7680, 4320));
+	mResolutions.push_back(glm::ivec2(854, 480));
+	mResolutions.push_back(glm::ivec2(1280, 720));
+	mResolutions.push_back(glm::ivec2(1366, 768));
+	mResolutions.push_back(glm::ivec2(1600, 900));
+	mResolutions.push_back(glm::ivec2(1920, 1080));
+	mResolutions.push_back(glm::ivec2(2560, 1440));
+	mResolutions.push_back(glm::ivec2(3840, 2160));
+	mResolutions.push_back(glm::ivec2(5120, 2880));
+	mResolutions.push_back(glm::ivec2(7680, 4320));
 
-	windowModes.push_back("windowed");
-	windowModes.push_back("fullscreen");
+	mWindowModes.push_back("windowed");
+	mWindowModes.push_back("fullscreen");
+
+	mSaveData.best_levelTime_minutesMap.emplace(Levels::LEVEL_1, mSaveData.Level_1_best_levelTime_minutes);
+	mSaveData.best_levelTime_secondsMap.emplace(Levels::LEVEL_1, mSaveData.Level_1_best_levelTime_seconds);
+	mSaveData.best_levelTime_centisecondsMap.emplace(Levels::LEVEL_1, mSaveData.Level_1_best_levelTime_centiseconds);
 
 	if (IMG_Init(IMG_INIT_PNG) == 0) {
 		std::cerr << "SDL3_image could not be initialized" << std::endl;
@@ -73,7 +79,7 @@ void App::StartUp() {
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 6);
-	if (debugMode) {
+	if (mSettings.debugMode) {
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 	}
 
@@ -81,7 +87,7 @@ void App::StartUp() {
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-	mWindow = SDL_CreateWindow("Never Gonna Give You Up", mWindowWidth, mWindowHeight, SDL_WINDOW_OPENGL);
+	mWindow = SDL_CreateWindow("VoidScape", mWindowWidth, mWindowHeight, SDL_WINDOW_OPENGL);
 
 	SDL_SetWindowPosition(mWindow, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	if (mWindow == nullptr) {
@@ -94,7 +100,7 @@ void App::StartUp() {
 		std::cout << "OpenGL context not available" << std::endl;
 		exit(1);
 	}
-	if (vsync == false) {
+	if (mSettings.VSync == false) {
 		SDL_GL_SetSwapInterval(0);
 	}
 	else {
@@ -104,7 +110,7 @@ void App::StartUp() {
 		std::cout << "Glad was not initialized" << std::endl;
 		exit(1);
 	}
-	if (debugMode) {
+	if (mSettings.debugMode) {
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(GLDebugMessageCallback, nullptr);
@@ -151,8 +157,6 @@ void App::PostStartUp() {
 
 	mAnimationHandler.Init(512);
 
-	mTextOut.Init(mTextureHandler, "assets/Level/Text.png");
-
 	Mix_AllocateChannels(20);
 	mAudioHandler.LoadSounds();
 	mEscapePortal.mSprite.mVertexData.Size = mAnimationHandler.EscapePortalAnimation.Size * mEscapePortal.mSizeMultiplier;
@@ -179,8 +183,10 @@ void App::PostStartUp() {
 
 	mBackgroundRenderer.LoadLevelBackground(&mBackgroundShaderProgram, &mBackgroundFramebufferShaderProgram, mPipelineProgram.ID, &mTextureHandler);
 
-	mAudioHandler.SetGlobalSFXVolume(SFXVolume);
-	mAudioHandler.SetGlobalMusicVolume(MusicVolume);
+	mAudioHandler.SetGlobalSFXVolume(mSettings.SFXVolume);
+	mAudioHandler.SetGlobalMusicVolume(mSettings.MusicVolume);
+
+	mSceneManager.Init(&mInputManager, &mBackgroundRenderer, &mAudioHandler, &mSettings, &mSaveData, &mBatchRenderer, &mTextRenderer);
 }
 
 void App::LoadGame(const bool retry) {
@@ -191,36 +197,18 @@ void App::LoadGame(const bool retry) {
 	mSceneManager.mUIScenes.mTitleScreenActive = false;
 	// reset movement handler
 	mMovementHandler.mLookDirection = LookDirections::RIGHT;
-	titleScreenDarkened = false;
-	newBestTimeMessageOneShot = false;
+	mSceneManager.mNewBestTimeMessageOneShot = false;
 
 	// reset camera
 	mCamera.mCameraOffset = glm::vec2(0.0f, 0.0f);
 
+	mSceneManager.ResetTimer();
+
 	// reset app
 	gameStarted = false;
-	titleScreenAlpha            = 0.0f;
-	titleScreenMusicVolume      = 128;
-	titleScreenAlphaTimer       = 0.0f;
-	titleScreenMessageTimer     = 0.0f;
-	startMessageTimer           = 0.0f;
-	titleScreenMusicVolumeTimer = 0.0f;
+	startMessageTimer = 0.0f;
 	mAudioHandler.mInitialMusicVolume = 128;
-	mAudioHandler.SetGlobalMusicVolume(MusicVolume);
-
-	// reset and load level
-	//mLevel.mBlocks.clear();
-	//mLevel.LoadLevelJson("levels/GameLevels/32p/Test_Level.json");
-	//mLevel.BuildLevel();
-	//for (int i = 0; i < mLevel.mBlocks.size(); i++) {
-	//	mSceneManager.mCurrentBlocks->at(i).Update();
-	//}
-	// 
-	//mSceneManager.mCurrentBlocks = &mSceneManager.mLevelScene.mLevelBlocks;
-	//mSceneManager.mLevelActive = true;
-	//mSceneManager.mMainMenuActive = false;
-
-	//mSceneManager.mUIScenes.LoadMainMenuBackground("assets/UI/Data/Layout/test40.json", mTextureHandler.mUI_BordersT_Offset);
+	mAudioHandler.SetGlobalMusicVolume(mSettings.MusicVolume);
 
 	Mix_HaltMusic();
 	Mix_HaltChannel(0);
@@ -259,33 +247,6 @@ void App::LoadGame(const bool retry) {
 	}
 
 	mSceneManager.mUIScenes.LoadPauseMenu(mTextureHandler.mUI_BordersT_Offset);
-
-
-	pauseTime = 0;
-	levelTime = 0;
-	levelTimeTotal = 0;
-
-	levelTime_seconds = 0;
-	levelTime_minutes = 0;
-	levelTime_centiseconds = 0;
-
-	//mSceneManager.mUIScenes.mTestButton.CreateBoxButtonCentered(glm::ivec2(23, 3), glm::vec2(960.0f, 540.0f), 30, mTextureHandler.mUI_BordersT_Offset);
-	//
-	//
-	//mSceneManager.mCurrentBlocks = &mSceneManager.mUIScenes.mBackgroundBlocks;
-	//mSceneManager.mLevelActive = false;
-	//mSceneManager.mMainMenuActive = true;
-
-	//mSceneManager.LoadGameLevel("levels/GameLevels/32p/Level_1.json", &mLevel, mTextureHandler.mBaseT_Offset);
-
-	//mSceneManager.LoadMenuLayout("assets/UI/Data/Layout/test40.json");
-	//mSceneManager.LoadMainMenu(mTextureHandler.mUI_BordersT_Offset);
-
-	// reset music
-	//				mSceneManager.mCurrentBlocks = &mSceneManager.mLevelScene.mLevelBlocks;
-	//			mSceneManager.mLevelActive = true;
-	//			mSceneManager.mMainMenuActive = false;
-
 }
 
 
@@ -312,332 +273,13 @@ void App::MainLoop() {
 
 void App::UpdatePlayground() {
 
-	if (mSceneManager.mMainMenuActive && mSceneManager.mUIScenes.mNextTabLoaded) {
-		switch (mSceneManager.mUIScenes.mActiveTab) {
-		case MenuTabs::MAIN:
-
-			if (mSceneManager.mUIScenes.mButtonMap["PLAY"].GetPressState()) {
-				mSceneManager.mUIScenes.mNextTabLoaded = false;
-				mSceneManager.mUIScenes.mNextTab = MenuTabs::LEVELS;
-				mSceneManager.mUIScenes.mMenuMoveDirection = MenuMoveDirection::LEFT;
-				mSceneManager.mUIScenes.mActiveTab = MenuTabs::LEVELS;
-			}
-
-			if (mSceneManager.mUIScenes.mButtonMap["QUIT"].GetPressState()) {
-				mQuit = true;
-			}
-
-			if (mSceneManager.mUIScenes.mButtonMap["SETTINGS"].GetPressState()) {
-				mSceneManager.mUIScenes.mNextTabLoaded = false;
-				mSceneManager.mUIScenes.mNextTab = MenuTabs::SETTINGS;
-				mSceneManager.mUIScenes.mMenuMoveDirection = MenuMoveDirection::RIGHT;
-				mSceneManager.mUIScenes.mActiveTab = MenuTabs::SETTINGS;
-			}
-			break;
-		case MenuTabs::SETTINGS:
-			if (mSceneManager.mUIScenes.mButtonMap["BACK"].GetPressState() || ((mInputManager.mLastKey_Scancode == SDL_SCANCODE_ESCAPE) && mInputManager.mLastkey_Relevant)) {
-				mSceneManager.mUIScenes.mNextTabLoaded = false;
-				mSceneManager.mUIScenes.mNextTab = MenuTabs::MAIN;
-				mSceneManager.mUIScenes.mMenuMoveDirection = MenuMoveDirection::LEFT;
-				mSceneManager.mUIScenes.mActiveTab = MenuTabs::MAIN;
-			}
-
-			if (mSceneManager.mUIScenes.mButtonMap["WINDOW_MODE"].GetPressState()) {
-				if (currentWindowModeIndex + 1 <= windowModes.size() - 1) {
-					currentWindowModeIndex += 1;
-				}
-				else {
-					currentWindowModeIndex = 0;
-				}
-				if (windowModes[currentWindowModeIndex] == "windowed") {
-					SDL_SetWindowSize(mWindow, resolutions[currentResolutionIndex].x, resolutions[currentResolutionIndex].y);
-					mWindowWidth = resolutions[currentResolutionIndex].x;
-					mWindowHeight = resolutions[currentResolutionIndex].y;
-
-					mBackgroundRenderer.ResizeFramebuffer(resolutions[currentResolutionIndex]);
-
-					viewportOffset.x = 0;
-					viewportOffset.y = 0;
-
-					glViewport(0, 0, mWindowWidth, mWindowHeight);
-					SDL_SetWindowFullscreen(mWindow, false);
-				}
-				else if (windowModes[currentWindowModeIndex] == "fullscreen") {
-					SDL_SetWindowFullscreen(mWindow, true);
-
-					int Width;
-					int Height;
-
-					SDL_GetWindowSize(mWindow, &Width, &Height);
-
-					glm::ivec2 resTemp = glm::ivec2(Width, Height);
-
-					int i = 0;
-					for (; resolutions[i].y != screenSize.y; i++) {
-
-					}
-
-					mBackgroundRenderer.ResizeFramebuffer(resTemp);
-
-					SDL_SetWindowSize(mWindow, resTemp.x, resTemp.y);
-					mWindowWidth = resTemp.x;
-					mWindowHeight = resTemp.y;
-
-					viewportOffset.x = (screenSize.x - mWindowWidth) / 2;
-					viewportOffset.y = (screenSize.y - mWindowHeight) / 2;
-
-					glViewport(viewportOffset.x, viewportOffset.y, mWindowWidth, mWindowHeight);
-
-				}
-			}
-
-			if (windowModes[currentWindowModeIndex] != "fullscreen") {
-				if (mSceneManager.mUIScenes.mButtonMap["RESOLUTION_DOWN"].GetPressState()) {
-					if (currentResolutionIndex - 1 >= 0) {
-						currentResolutionIndex -= 1;
-
-						mBackgroundRenderer.ResizeFramebuffer(resolutions[currentResolutionIndex]);
-
-						SDL_SetWindowSize(mWindow, resolutions[currentResolutionIndex].x, resolutions[currentResolutionIndex].y);
-						mWindowWidth = resolutions[currentResolutionIndex].x;
-						mWindowHeight = resolutions[currentResolutionIndex].y;
-
-						glViewport(0, 0, mWindowWidth, mWindowHeight);
-						std::cout << glm::to_string(resolutions[currentResolutionIndex]) << std::endl;
-					}
-				}
-
-				if (mSceneManager.mUIScenes.mButtonMap["RESOLUTION_UP"].GetPressState()) {
-					if (currentResolutionIndex + 1 <= resolutions.size() - 1 && resolutions[currentResolutionIndex + 1].y <= screenSize.y) {
-						currentResolutionIndex += 1; 
-
-						mBackgroundRenderer.ResizeFramebuffer(resolutions[currentResolutionIndex]);
-
-						SDL_SetWindowSize(mWindow, resolutions[currentResolutionIndex].x, resolutions[currentResolutionIndex].y);
-						mWindowWidth = resolutions[currentResolutionIndex].x;
-						mWindowHeight = resolutions[currentResolutionIndex].y;
-						glViewport(0, 0, mWindowWidth, mWindowHeight);
-						std::cout << glm::to_string(resolutions[currentResolutionIndex]) << std::endl;
-					}
-				}
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["AUTO_RETRY"].GetPressState()) {
-				if (autoRestart) {
-					autoRestart = false;
-				}
-				else if (!autoRestart) {
-					autoRestart = true;
-				}
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["SFX_VOLUME_DOWN"].GetPressState()) {
-				if (SFXVolume > 0) {
-					SFXVolume -= 1;
-				}
-				mAudioHandler.SetGlobalSFXVolume(SFXVolume);
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["SFX_VOLUME_UP"].GetPressState()) {
-				if (SFXVolume < 10) {
-					SFXVolume += 1;
-				}
-				mAudioHandler.SetGlobalSFXVolume(SFXVolume);
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["MUSIC_VOLUME_DOWN"].GetPressState()) {
-				if (MusicVolume > 0) {
-					MusicVolume -= 1;
-				}
-				mAudioHandler.SetGlobalMusicVolume(MusicVolume);
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["MUSIC_VOLUME_UP"].GetPressState()) {
-				if (MusicVolume < 10) {
-					MusicVolume += 1;
-				}
-				mAudioHandler.SetGlobalMusicVolume(MusicVolume);
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["CONTROLS"].GetPressState()) {
-				mSceneManager.mUIScenes.mNextTabLoaded = false;
-				mSceneManager.mUIScenes.mNextTab = MenuTabs::CONTROLS;
-				mSceneManager.mUIScenes.mMenuMoveDirection = MenuMoveDirection::RIGHT;
-				mSceneManager.mUIScenes.mActiveTab = MenuTabs::CONTROLS;
-			}
-
-			//std::cout << SFXVolume << ", " << MusicVolume << std::endl;
-
-			//if (autoRestart) {
-			//	mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, "On", 960.0f + 1920.0f, 405.0f, 0.25f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mSceneManager.mUIScenes.mButtonMap["AUTO_RETRY"].mModelMatrix);
-			//}
-			//else if (!autoRestart) {
-			//	mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, "Off", 960.0f + 1920.0f, 405.0f, 0.25f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mSceneManager.mUIScenes.mButtonMap["AUTO_RETRY"].mModelMatrix);
-			//}
-			//
-			//mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, std::to_string(SFXVolume), 960.0f + 1920.0f, 535.0f, 0.25f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mSceneManager.mUIScenes.mButtonMap["SFX_VOLUME"].mModelMatrix);
-			//mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, std::to_string(MusicVolume), 960.0f + 1920.0f, 665.0f, 0.25f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mSceneManager.mUIScenes.mButtonMap["MUSIC_VOLUME"].mModelMatrix);
-			//
-			//mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, std::format("{}x{}", mWindowWidth, mWindowHeight), 960.0f + 1920.0f, 925.0f, 0.25f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mSceneManager.mUIScenes.mButtonMap["RESOLUTION"].mModelMatrix);
-			//mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, windowModes[currentWindowModeIndex], 960.0f + 1920.0f, 795.0f, 0.25f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mSceneManager.mUIScenes.mButtonMap["WINDOW_MODE"].mModelMatrix);
-			break;
-		case MenuTabs::LEVELS:
-			if (mSceneManager.mUIScenes.mButtonMap["BACK_LEVEL_TAB"].GetPressState() || ((mInputManager.mLastKey_Scancode == SDL_SCANCODE_ESCAPE) && mInputManager.mLastkey_Relevant)) {
-				mSceneManager.mUIScenes.mNextTabLoaded = false;
-				mSceneManager.mUIScenes.mNextTab = MenuTabs::MAIN;
-				mSceneManager.mUIScenes.mMenuMoveDirection = MenuMoveDirection::RIGHT;
-				mSceneManager.mUIScenes.mActiveTab = MenuTabs::MAIN;
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["LEVEL_1"].GetPressState()) {
-				mSceneManager.LoadLevel(Levels::LEVEL_1, mTextureHandler.mBaseT_Offset, mAudioHandler.IntroMusic);
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["TEST_LEVEL"].GetPressState()) {
-				mSceneManager.LoadLevel(Levels::TEST_LEVEL, mTextureHandler.mBaseT_Offset, mAudioHandler.IntroMusic);
-			}
-			//if (best_levelTime_minutes == 0 && best_levelTime_seconds == 0 && best_levelTime_centiseconds == 0) {
-			//	mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, "Best Time: Not played", 1300.0f - 1920.0f, 960.0f, 0.25f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mSceneManager.mUIScenes.mButtonMap["LEVEL_1"].mModelMatrix, false, true, true);
-			//}
-			//else {
-			//	mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, "Best Time: " + std::format("{}:{:02}:{:02}", best_levelTime_minutes, best_levelTime_seconds, best_levelTime_centiseconds), 1300.0f - 1920.0f, 960.0f, 0.25f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mSceneManager.mUIScenes.mButtonMap["LEVEL_1"].mModelMatrix, false, true, true);
-			//}
-
-			break;
-		case MenuTabs::CONTROLS:
-			if (mSceneManager.mUIScenes.mButtonMap["BACK_CONTROLS_TAB"].GetPressState() || ((mInputManager.mLastKey_Scancode == SDL_SCANCODE_ESCAPE) && mInputManager.mLastkey_Relevant)) {
-				mSceneManager.mUIScenes.mNextTabLoaded = false;
-				mSceneManager.mUIScenes.mButtonMap["LEFT_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["RIGHT_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["JUMP_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["DUCK_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mNextTab = MenuTabs::SETTINGS;
-				mSceneManager.mUIScenes.mMenuMoveDirection = MenuMoveDirection::LEFT;
-				mSceneManager.mUIScenes.mActiveTab = MenuTabs::SETTINGS;
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["LEFT_BIND"].GetPressState()) {
-				mSceneManager.mUIScenes.mButtonMap["LEFT_BIND"].mInteracting = true;
-				mSceneManager.mUIScenes.mButtonMap["RIGHT_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["JUMP_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["DUCK_BIND"].mInteracting = false;
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["RIGHT_BIND"].GetPressState()) {
-				mSceneManager.mUIScenes.mButtonMap["LEFT_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["RIGHT_BIND"].mInteracting = true;
-				mSceneManager.mUIScenes.mButtonMap["JUMP_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["DUCK_BIND"].mInteracting = false;
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["JUMP_BIND"].GetPressState()) {
-				mSceneManager.mUIScenes.mButtonMap["LEFT_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["RIGHT_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["JUMP_BIND"].mInteracting = true;
-				mSceneManager.mUIScenes.mButtonMap["DUCK_BIND"].mInteracting = false;
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["DUCK_BIND"].GetPressState()) {
-				mSceneManager.mUIScenes.mButtonMap["LEFT_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["RIGHT_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["JUMP_BIND"].mInteracting = false;
-				mSceneManager.mUIScenes.mButtonMap["DUCK_BIND"].mInteracting = true;
-			}
-			break;
-		}
-		if ((mInputManager.mLastKey_Scancode == SDL_SCANCODE_ESCAPE) && mInputManager.mLastkey_Relevant) {
-			Mix_PlayChannel(18, mAudioHandler.EscapeClick, 0);
-		}
-	}
-
-	if (!mSceneManager.mUIScenes.mNextTabLoaded) {
-		switch (mSceneManager.mUIScenes.mMenuMoveDirection) {
-		case MenuMoveDirection::LEFT:
-			mSceneManager.mUIScenes.TranslateMenuSmooth(glm::vec2(1920.0f, 0.0f), deltaTime, 3000.0f);
-			break;
-		case MenuMoveDirection::RIGHT:
-			mSceneManager.mUIScenes.TranslateMenuSmooth(glm::vec2(-1920.0f, 0.0f), deltaTime, 3000.0f);
-			break;
-		}
-	}
-
-	if (mSceneManager.mMainMenuActive) {
-		switch (mSceneManager.mUIScenes.mActiveTab) {
-		case MenuTabs::MAIN:
-			break;
-		case MenuTabs::SETTINGS:
-			mSceneManager.mUIScenes.mDynamicTextMap["tRESOLUTION"].Text = std::format("{}x{}", mWindowWidth, mWindowHeight);
-
-			mSceneManager.mUIScenes.mDynamicTextMap["tWINDOW_MODE"].Text = windowModes[currentWindowModeIndex];
-			
-			mSceneManager.mUIScenes.mDynamicTextMap["tMUSIC_VOLUME"].Text = std::to_string(MusicVolume);
-			
-			mSceneManager.mUIScenes.mDynamicTextMap["tSFX_VOLUME"].Text = std::to_string(SFXVolume);
-
-			if (autoRestart) {
-				mSceneManager.mUIScenes.mDynamicTextMap["tAUTO_RETRY"].Text = "On";
-			}
-			else if (!autoRestart) {
-				mSceneManager.mUIScenes.mDynamicTextMap["tAUTO_RETRY"].Text = "Off";
-			}
-			break;
-		case MenuTabs::LEVELS:
-			if (best_levelTime_minutes == 0 && best_levelTime_seconds == 0 && best_levelTime_centiseconds == 0) {
-				mSceneManager.mUIScenes.mDynamicTextMap["tLEVEL_1"].Text = "Best Time: Not played";
-			}
-			else {
-				mSceneManager.mUIScenes.mDynamicTextMap["tLEVEL_1"].Text = "Best Time: " + std::format("{}:{:02}:{:02}", best_levelTime_minutes, best_levelTime_seconds, best_levelTime_centiseconds);
-			}
-			break;
-		case MenuTabs::CONTROLS:
-			if (mSceneManager.mUIScenes.mButtonMap["LEFT_BIND"].mInteracting) {
-				if (mInputManager.mLastkey_Relevant) {
-					mInputManager.mMOVE_LEFT_Bind = mInputManager.mLastKey_Scancode;
-					mSceneManager.mUIScenes.mButtonMap["LEFT_BIND"].mInteracting = false;
-				}
-				mSceneManager.mUIScenes.mDynamicTextMap["tLEFT_BIND"].Text = "_";
-				mSceneManager.mUIScenes.mDynamicTextMap["tLEFT_BIND"].Possition.y = 950.0f;
-			}
-			else {
-				mSceneManager.mUIScenes.mDynamicTextMap["tLEFT_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(mInputManager.mMOVE_LEFT_Bind, SDL_KMOD_NONE, false));
-				mSceneManager.mUIScenes.mDynamicTextMap["tLEFT_BIND"].Possition.y = 960.0f;
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["RIGHT_BIND"].mInteracting) {
-				if (mInputManager.mLastkey_Relevant) {
-					mInputManager.mMOVE_RIGHT_Bind = mInputManager.mLastKey_Scancode;
-					mSceneManager.mUIScenes.mButtonMap["RIGHT_BIND"].mInteracting = false;
-				}
-				mSceneManager.mUIScenes.mDynamicTextMap["tRIGHT_BIND"].Text = "_";
-				mSceneManager.mUIScenes.mDynamicTextMap["tRIGHT_BIND"].Possition.y = 850.0f;
-			}
-			else {
-				mSceneManager.mUIScenes.mDynamicTextMap["tRIGHT_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(mInputManager.mMOVE_RIGHT_Bind, SDL_KMOD_NONE, false));
-				mSceneManager.mUIScenes.mDynamicTextMap["tRIGHT_BIND"].Possition.y = 860.0f;
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["JUMP_BIND"].mInteracting) {
-				if (mInputManager.mLastkey_Relevant) {
-					mInputManager.mJUMP_Bind = mInputManager.mLastKey_Scancode;
-					mSceneManager.mUIScenes.mButtonMap["JUMP_BIND"].mInteracting = false;
-				}
-				mSceneManager.mUIScenes.mDynamicTextMap["tJUMP_BIND"].Text = "_";
-				mSceneManager.mUIScenes.mDynamicTextMap["tJUMP_BIND"].Possition.y = 750.0f;
-			}
-			else {
-				mSceneManager.mUIScenes.mDynamicTextMap["tJUMP_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(mInputManager.mJUMP_Bind, SDL_KMOD_NONE, false));
-				mSceneManager.mUIScenes.mDynamicTextMap["tJUMP_BIND"].Possition.y = 760.0f;
-			}
-			if (mSceneManager.mUIScenes.mButtonMap["DUCK_BIND"].mInteracting) {
-				if (mInputManager.mLastkey_Relevant) {
-					mInputManager.mDUCK_Bind = mInputManager.mLastKey_Scancode;
-					mSceneManager.mUIScenes.mButtonMap["DUCK_BIND"].mInteracting = false;
-				}
-				mSceneManager.mUIScenes.mDynamicTextMap["tDUCK_BIND"].Text = "_";
-				mSceneManager.mUIScenes.mDynamicTextMap["tDUCK_BIND"].Possition.y = 650.0f;
-			}
-			else {
-				mSceneManager.mUIScenes.mDynamicTextMap["tDUCK_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(mInputManager.mDUCK_Bind, SDL_KMOD_NONE, false));
-				mSceneManager.mUIScenes.mDynamicTextMap["tDUCK_BIND"].Possition.y = 660.0f;
-			}
-			break;
-		}
-	}
-
-
-
-
 
 }
 
 void App::Update() {
 
+	UpdatePlayground();
+
 	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
 	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
 	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
@@ -656,6 +298,9 @@ void App::Update() {
 	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
 	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
 	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
+
+	static int count = 0;
+	static double bufffps = 0.0f;
 
 	static int fps1;
 	// delta time logic vvv
@@ -673,11 +318,26 @@ void App::Update() {
 
 		fps1 = fps;
 
-		//std::cout << "FPS: " << fps << std::endl;
+		std::cout << "FPS: " << fps << std::endl;
+
+
+		if (testing) {
+			bufffps += fps;
+			count++;
+		}
 
 		frameCount = 0;
 		lastTime = currentTime;
 	}
+
+	if (count == 10 && testing) {
+		std::cout << "FRAMES ELAPSED: " <<  bufffps << ", AVG FPS: " << bufffps / 10.0f << ", TIME: " << count << std::endl;
+		testing = false;
+		count = 0;
+	}
+
+
+
 	static int o = 0;
 	if (o < 20) {
 		deltaTimeBuffer += deltaTimeRaw;
@@ -706,38 +366,7 @@ void App::Update() {
 
 	//std::cout << glm::to_string(mCamera.mCameraPosition) << std::endl;
 
-	if (mSceneManager.mLevelActive) {
-		if ((mInputManager.mLastKey_Scancode == SDL_SCANCODE_ESCAPE) && mInputManager.mLastkey_Relevant) {
-			if (mPause) {
-				mPause = false;
-				pauseTime += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - pauseTimer).count();
-				Mix_ResumeMusic();
-				Mix_Resume(0);
-				Mix_Resume(1);
-				Mix_Resume(2);
-				Mix_Resume(3);
-				Mix_Resume(4);
-				Mix_Resume(5);
-				Mix_Resume(6);
-				Mix_Resume(7);
-				Mix_Resume(8);
-				Mix_Resume(9);
-				Mix_Resume(10);
-				Mix_Resume(11);
-				Mix_Resume(12);
-				Mix_Resume(13);
-				Mix_Resume(14);
 
-				Mix_Resume(17);
-				Mix_Resume(18);
-				Mix_Resume(19);
-			}
-			else if (!mPause) {
-				pauseTimer = std::chrono::high_resolution_clock::now();
-				mPause = true;
-			}
-		}
-	}
 
 	if (mActor.mDead || mActor.mEscaped) {
 		if (mAudioHandler.mMusicFadeoutTimer > mAudioHandler.mMusicFadeoutTime && mAudioHandler.mInitialMusicVolume > 0) {
@@ -748,8 +377,10 @@ void App::Update() {
 			mAudioHandler.mInitialMusicVolume = 0;
 		}
 		mAudioHandler.mMusicFadeoutTimer += deltaTime;
-		mAudioHandler.SetGlobalMusicVolume(MusicVolume);
+		mAudioHandler.SetGlobalMusicVolume(mSettings.MusicVolume);
 	}
+
+
 
 
 
@@ -757,7 +388,7 @@ void App::Update() {
 	if (gameStarted == false && mActor.mVelocity.x != 0.0f) {
 		Mix_HaltMusic();
 		gameStarted = true;
-		levelTimerTotal = std::chrono::high_resolution_clock::now();
+		mSceneManager.StartLevelTimer();
 	}
 
 	if (gameStarted) {
@@ -798,7 +429,7 @@ void App::Update() {
 
 	// black hole update
 	if (gameStarted && !mPause) {
-		mBlackHole.Update(mSceneManager.mCurrentBlocks, mActor, deltaTime, mAnimationHandler.BlackHoleBirthAnimation, mAnimationHandler.BlackHoleLoopAnimation, mAudioHandler.BlackHoleBorn, mAudioHandler.ConsumedByVoid, mAudioHandler.BlackHoleIdle, mAudioHandler.mGlobalSFXVolumeModifier);
+		mBlackHole.Update(mSceneManager.mCurrentBlocks, mActor, deltaTime, mAnimationHandler.BlackHoleBirthAnimation, mAnimationHandler.BlackHoleLoopAnimation, mAudioHandler.BlackHoleBorn, mAudioHandler.ConsumedByVoid, mAudioHandler.BlackHoleIdle, mAudioHandler.mGlobalSFXVolumeModifier, testing);
 	}
 
 	//mBatchRenderer.DrawSeperatly(glm::vec2(0.0f, 0.0f), mBlackHole.AABBSize, glm::vec4(0.0f, 0.0f, 1.0f, 0.2f), mCamera.GetProjectionMatrix());
@@ -845,14 +476,15 @@ void App::Update() {
 	//mBatchRenderer.DrawSeperatly(glm::vec2(0.0f, 0.0f), glm::vec2(5.0f, 1080.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), mCamera.GetProjectionMatrix());
 
 	// level render vvv
-	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
 
 	//std::cout << mSceneManager.mCurrentBlocks->size() << std::endl;
+	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
 
 	if (mSceneManager.mLevelActive == true) {
 		if (gameStarted) {
 			if (mBlackHole.mSprite.mVertexData.Position.x + mBlackHole.mSprite.mVertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 				&& mBlackHole.mSprite.mVertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f)) {
+				mBatchRenderer.DrawInBatch(mBlackHole.mSprite.mVertexData.Position, mBlackHole.mSprite.mVertexData.Size, mBlackHole.mSprite.mVertexData.TextureIndex, mAnimationHandler.BlackHoleLoopAnimation.Size, mBlackHole.mSprite.mVertexData.TexturePosition);
 				mBatchRenderer.DrawInBatch(mBlackHole.mSprite.mVertexData.Position, mBlackHole.mSprite.mVertexData.Size, mBlackHole.mSprite.mVertexData.TextureIndex, mAnimationHandler.BlackHoleLoopAnimation.Size, mBlackHole.mSprite.mVertexData.TexturePosition);
 			}
 		}
@@ -870,13 +502,12 @@ void App::Update() {
 				flyingBlocks.push_back(i);
 			}
 		}
-
 		mEscapePortal.Update(mAnimationHandler.EscapePortalAnimation, deltaTime, mActor, mAudioHandler.PortalEscape, mAudioHandler.PortalIdle, mAudioHandler.mGlobalSFXVolumeModifier);
 		if (mEscapePortal.mSprite.mVertexData.Position.x + mEscapePortal.mSprite.mVertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 			&& mEscapePortal.mSprite.mVertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f)) {
 			mBatchRenderer.DrawInBatch(mEscapePortal.mSprite.mVertexData.Position, mEscapePortal.mSprite.mVertexData.Size, mEscapePortal.mSprite.mVertexData.TextureIndex, mAnimationHandler.EscapePortalAnimation.Size, mEscapePortal.mSprite.mVertexData.TexturePosition);
 		}
-
+		
 		mBatchRenderer.EndBatch();
 		mBatchRenderer.Flush();
 
@@ -895,7 +526,7 @@ void App::Update() {
 		}
 
 		mBatchRenderer.EndBatch();
-		mBatchRenderer.FlushFly();
+		mBatchRenderer.Flush();
 	} // level render ^^^ menu render vvv
 	else if (mSceneManager.mMainMenuActive == true) {
 		for (const auto& pair : mSceneManager.mUIScenes.mButtonMap) {
@@ -912,19 +543,20 @@ void App::Update() {
 				mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, mSceneManager.mUIScenes.mDynamicTextMap[pair.first].Text, mSceneManager.mUIScenes.mDynamicTextMap[pair.first].Possition.x, mSceneManager.mUIScenes.mDynamicTextMap[pair.first].Possition.y, mSceneManager.mUIScenes.mDynamicTextMap[pair.first].Scale, mSceneManager.mUIScenes.mDynamicTextMap[pair.first].Color, mCamera.GetProjectionMatrix(), *mSceneManager.mUIScenes.mDynamicTextMap[pair.first].ModelMatrix, mSceneManager.mUIScenes.mDynamicTextMap[pair.first].CenteredX, mSceneManager.mUIScenes.mDynamicTextMap[pair.first].CenteredY, mSceneManager.mUIScenes.mDynamicTextMap[pair.first].RightSided);
 			}
 		}
-		
-		UpdatePlayground();
 
-		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
+		mSceneManager.UpdateUIMenu(mTextureHandler.mBaseT_Offset, deltaTime, mWindowWidth, mWindowHeight, mQuit, mWindowModes, mResolutions, mWindow);
+
+		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix(), &mCamera.mUIModelMatrix);
 		for (int i = 0; i < mSceneManager.mCurrentBlocks->size(); i++) {
-			mBatchRenderer.DrawInBatch(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Size, static_cast<uint32_t>(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.TextureIndex), glm::vec2(0.03125f, 0.03125f), glm::vec2(0.0f, 0.0f), false, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Color);
+			mBatchRenderer.DrawInBatch(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Size, static_cast<uint32_t>(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.TextureIndex), glm::vec2(0.03125f, 0.03125f), glm::vec2(0.0f, 0.0f), 0.0f, 1.0f, false, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Color);
 		}
 		mBatchRenderer.EndBatch();
-		mBatchRenderer.Flush(mCamera.mUIModelMatrix);
+		mBatchRenderer.Flush();
 	}
 
 	// menu render ^^^
 
+	std::cout << glm::to_string(mActor.mVelocity) << std::endl;
 
 	// state machine update
 	if (mSceneManager.mLevelActive && !mPause) {
@@ -933,315 +565,79 @@ void App::Update() {
 
 	glm::vec2 adadaad = glm::vec2(mActor.mSprite.mVertexData.Position.x + (mStateMachine.mCurrentActorDrawSize.x / 2.0f) - (mActor.mDoubleJumpOrb.Size.x / 2.0f), mActor.mSprite.mVertexData.Position.y + mStateMachine.mCurrentActorDrawSize.y + 40.0f);
 
+	float angle = 0.0f;
+
+	if (mStateMachine.mCurrentPlayerState != PlayerStates::RUNNING) {
+		angle = 0.0f;
+	}
+	else {
+		if (mStateMachine.mActorFlipped) {
+			angle = glm::radians(mActor.mVelocity.x / 250.0f);
+		}
+		else {
+			angle = glm::radians(mActor.mVelocity.x / 250.0f);
+		}
+	}
+
+
+	// this is a LAG MACHINE, do no turn it on unless you want to get 10 fps
+	//glm::vec2 centr = glm::vec2(200.0f, 200.0f);
+	//float radius = 50.0f;
+	//const float pointSize = 1.0f;
+	//
+	//const float left = centr.x - radius;
+	//const float right = centr.x + radius;
+	//const float top = centr.y - radius;
+	//const float bottom = centr.y + radius;
+	//
+	//const float step = pointSize * 0.7f;
+	//
+	//const float radiusSq = radius * radius;
+	//
+	//for (float y = top; y <= bottom; y += step) {
+	//	for (float x = left; x <= right; x += step) {
+	//		// Calculate squared distance from center
+	//		const float dx = x - centr.x;
+	//		const float dy = y - centr.y;
+	//		const float distSq = dx * dx + dy * dy;
+	//
+	//		// Render if point is within the circle
+	//		if (distSq <= radiusSq) {
+	//			mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), glm::vec2(x, y), glm::vec2(pointSize, pointSize),
+	//				0, glm::vec2(0.1875f, 0.1875f), mActor.mDoubleJumpOrb.TexturePosition, 0.0f, 1.0f, false, &mActor.mModelMatrix, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
+	//		}
+	//	}
+	//}
+
+
 	// actor render
 	if (mActor.mIsVisible == true && mSceneManager.mLevelActive == true) {
-		mBatchRenderer.DrawSeperatly(mActor.mSprite.mVertexData.Position, mStateMachine.mCurrentActorDrawSize, mCamera.GetProjectionMatrix(),
-			mStateMachine.mCurrentActorTextureIndex, mStateMachine.mCurrentActorTextureSize, mStateMachine.mCurrentActorTexturePosition, mActor.mModelMatrix, mStateMachine.mActorFlipped);	
+		mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), mActor.mSprite.mVertexData.Position, mStateMachine.mCurrentActorDrawSize,
+			mStateMachine.mCurrentActorTextureIndex, mStateMachine.mCurrentActorTextureSize, mStateMachine.mCurrentActorTexturePosition, angle, 1.0f, mStateMachine.mActorFlipped, &mActor.mModelMatrix);
 		if (!mActor.mDead) {
-			mBatchRenderer.DrawSeperatly(adadaad, mActor.mDoubleJumpOrb.Size, mCamera.GetProjectionMatrix(),
-				mTextureHandler.mOrbT_Offset + 1, glm::vec2(0.1875f, 0.1875f), mActor.mDoubleJumpOrb.TexturePosition, mActor.mModelMatrix, false);
+			mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), adadaad, mActor.mDoubleJumpOrb.Size, 
+				mTextureHandler.mOrbT_Offset + 1, glm::vec2(0.1875f, 0.1875f), mActor.mDoubleJumpOrb.TexturePosition, 0.0f, 1.0f, false, &mActor.mModelMatrix);
 			if (mMovementHandler.mCanDoubleJump) {
-				mBatchRenderer.DrawSeperatly(adadaad, mActor.mDoubleJumpOrb.Size, mCamera.GetProjectionMatrix(),
-					mTextureHandler.mOrbT_Offset, glm::vec2(0.1875f, 0.1875f), mActor.mDoubleJumpOrb.TexturePosition, mActor.mModelMatrix, false);
-			}
+				mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), adadaad, mActor.mDoubleJumpOrb.Size, 
+					mTextureHandler.mOrbT_Offset, glm::vec2(0.1875f, 0.1875f), mActor.mDoubleJumpOrb.TexturePosition, 0.0f, 1.0f, false, &mActor.mModelMatrix);
+			} 
 		}
 		//mBatchRenderer.Test();
 	}
 
+	bool restart = false;
+	bool restartMode = false;
 
+	mSceneManager.UpdateUIInGame(restart, restartMode, mActor.mDead, mActor.mEscaped, mPause, gameStarted, mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix, deltaTime, mStateMachine.mActorDeathCause, &mTextShaderProgram, mPipelineProgram.ID, fps1);
 
-	//if (mSceneManager.mChangingScene) {
-	//	mSceneManager.SceneChangeAnim(deltaTime);
-	//	mBatchRenderer.DrawSeperatly(glm::vec2(0.0f, 0.0f), mSceneManager.mCurtainSize, glm::vec4((14.0f / 256.0f), (7.0f / 256.0f), (27.0f / 256.0f), 1.0f), mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix);
-	//}
-	//mBatchRenderer.DrawSeperatly(glm::vec2((1.0f + mActor.mScreenPosition.x) * 960.0f - mActor.mSprite.mVertexData.Size.x / 2, (1.0f + mActor.mScreenPosition.y) * 540.0f), glm::vec2(5.0f, 5.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix);
-	//
-	//mBatchRenderer.DrawSeperatly(mBlackHole.epicenterAABBPos, mBlackHole.epicenterAABBSize, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), mCamera.GetProjectionMatrix());
-
-	if (mActor.mDead || mActor.mEscaped) {
-		mSceneManager.mUIScenes.mTitleScreenActive = true;
-	}
-
-	if (mSceneManager.mLevelActive == true && mSceneManager.mUIScenes.mTitleScreenActive == true) {
-
-		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
-		//mBatchRenderer.DrawInBatch(glm::vec2(0.0f, 0.0f), glm::vec2(1920.0f, 1080.0f), glm::vec4((71.0f / 256.0f), (17.0f / 256.0f), (7.0f / 256.0f), titleScreenAlpha));
-		mBatchRenderer.DrawInBatch(glm::vec2(0.0f, 0.0f), glm::vec2(1920.0f, 1080.0f), glm::vec4(0.0f, 0.0f, 0.0f, titleScreenAlpha));
-		mBatchRenderer.EndBatch();
-		mBatchRenderer.Flush(mCamera.mUIModelMatrix);
-
-		if (titleScreenAlphaTimer > titleScreenAlphaTime && titleScreenAlpha < 0.5f) {
-			titleScreenAlpha += 0.008f;
-			titleScreenAlphaTimer = 0.0f;
-		}
-		if (titleScreenAlpha >= 0.5f && !titleScreenDarkened) {
-			titleScreenAlpha = 0.5f;
-			titleScreenDarkened = true;
-		}
-		titleScreenAlphaTimer += deltaTime;
-
-		if (titleScreenMusicVolumeTimer > titleScreenMusicVolumeTime && titleScreenMusicVolume > 0) {
-			titleScreenMusicVolume -= 1;
-			titleScreenMusicVolumeTimer = 0.0f;
-		}
-		if (titleScreenMusicVolume < 0) {
-			titleScreenMusicVolume = 0;
-		}
-		titleScreenMusicVolumeTimer += deltaTime;
-
-		if (titleScreenDarkened) {
-			if (autoRestart && !mActor.mEscaped) {
-				LoadGame(true);
-			}
-
-			for (const auto& pair : mSceneManager.mUIScenes.mInGameTitleButtonMap) {
-				mSceneManager.mUIScenes.mInGameTitleButtonMap[pair.first].Render(&mBatchRenderer, mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix);
-			}
-
-			if (!mActor.mEscaped) {
-				std::string deathMessageText;
-				glm::vec4 deathMessageColor = glm::vec4(1.0f);
-				
-				switch (mStateMachine.mActorDeathCause) {
-				case DeathCause::LAVA:
-					deathMessageText = "Tried to swim in lava";
-					deathMessageColor = glm::vec4(1.0f, 0.42578125f, 0.12109375f, 1.0f);
-					break;
-				case DeathCause::FELL_DOWN:
-					deathMessageText = "Fell out of the world";
-					deathMessageColor = glm::vec4(0.0f, 0.7265625f, 1.0f, 1.0f);
-					break;
-				case DeathCause::BLACK_HOLE:
-					deathMessageText = "Consumed by the void";
-					deathMessageColor = glm::vec4(0.0f, 0.7265625f, 1.0f, 1.0f);
-					break;
-				default:
-					deathMessageText = "Skill issue, git gud lol";
-					break;
-				}
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tTITLE"].Text = "Game Over";
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tTITLE"].Color = glm::vec3(1.0f, 0.0f, 0.14f);
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tDEATH_CAUSE"].Text = deathMessageText;
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tDEATH_CAUSE"].Color = deathMessageColor;
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tTIME"].Text = "";
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tBEST_TIME"].Text = "";
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tNEW_BEST_TIME"].Text = "";
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tRETRY"].Text = "Retry";
-			} 
-			else {
-				if (((levelTime_minutes * 6000 + levelTime_seconds * 100 + levelTime_centiseconds) < (best_levelTime_minutes * 6000 + best_levelTime_seconds * 100 + best_levelTime_centiseconds)) || (best_levelTime_minutes == 0 && best_levelTime_seconds == 0 && best_levelTime_centiseconds == 0)) {
-					best_levelTime_minutes = levelTime_minutes;
-					best_levelTime_seconds = levelTime_seconds;
-					best_levelTime_centiseconds = levelTime_centiseconds;
-					newBestTimeMessageOneShot = true;
-				}
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tTITLE"].Text = "Escaped";
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tTITLE"].Color = glm::vec3(0.8125f, 0.0f, 0.875f);
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tDEATH_CAUSE"].Text = "";
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tTIME"].Text = "Time: " + std::format("{}:{:02}:{:02}", levelTime_minutes, levelTime_seconds, levelTime_centiseconds);
-
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tBEST_TIME"].Text = "Best Time: " + std::format("{}:{:02}:{:02}", best_levelTime_minutes, best_levelTime_seconds, best_levelTime_centiseconds);
-				
-				if (newBestTimeMessageOneShot) {
-					mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tNEW_BEST_TIME"].Text = "New Best Time!";
-				}
-				else {
-					mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tNEW_BEST_TIME"].Text = "";
-				}
-				
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tRETRY"].Text = "Restart";
-
-
-			}
-			if (mSceneManager.mUIScenes.mInGameTitleButtonMap["RETRY"].GetPressState()) {
-				LoadGame(true);
-			}
-			if (mSceneManager.mUIScenes.mInGameTitleButtonMap["AUTO_RETRY"].GetPressState()) {
-				if (autoRestart) {
-					autoRestart = false;
-				}
-				else if (!autoRestart) {
-					autoRestart = true;
-				}
-			}
-			if (mSceneManager.mUIScenes.mInGameTitleButtonMap["BACK_TO_MENU"].GetPressState()) {
-				LoadGame();
-			}
-
-			if (autoRestart) {
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tAUTO_RETRY"].Text = "On";
-			}
-			else if (!autoRestart) {
-				mSceneManager.mUIScenes.mInGameTitleDynamicTextMap["tAUTO_RETRY"].Text = "Off";
-			}
-
-			for (int i = 0; i < mSceneManager.mUIScenes.mInGameTitleTextToRender.size(); i++) {
-				mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, mSceneManager.mUIScenes.mInGameTitleTextToRender[i].Text, mSceneManager.mUIScenes.mInGameTitleTextToRender[i].Possition.x, mSceneManager.mUIScenes.mInGameTitleTextToRender[i].Possition.y, mSceneManager.mUIScenes.mInGameTitleTextToRender[i].Scale, mSceneManager.mUIScenes.mInGameTitleTextToRender[i].Color, mCamera.GetProjectionMatrix(), *mSceneManager.mUIScenes.mInGameTitleTextToRender[i].ModelMatrix, mSceneManager.mUIScenes.mInGameTitleTextToRender[i].CenteredX, mSceneManager.mUIScenes.mInGameTitleTextToRender[i].CenteredY, mSceneManager.mUIScenes.mInGameTitleTextToRender[i].RightSided);
-			}
-
-			for (auto& pair : mSceneManager.mUIScenes.mInGameTitleDynamicTextMap) {
-				mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, mSceneManager.mUIScenes.mInGameTitleDynamicTextMap[pair.first].Text, mSceneManager.mUIScenes.mInGameTitleDynamicTextMap[pair.first].Possition.x, mSceneManager.mUIScenes.mInGameTitleDynamicTextMap[pair.first].Possition.y, mSceneManager.mUIScenes.mInGameTitleDynamicTextMap[pair.first].Scale, mSceneManager.mUIScenes.mInGameTitleDynamicTextMap[pair.first].Color, mCamera.GetProjectionMatrix(), *mSceneManager.mUIScenes.mInGameTitleDynamicTextMap[pair.first].ModelMatrix, mSceneManager.mUIScenes.mInGameTitleDynamicTextMap[pair.first].CenteredX, mSceneManager.mUIScenes.mInGameTitleDynamicTextMap[pair.first].CenteredY, mSceneManager.mUIScenes.mInGameTitleDynamicTextMap[pair.first].RightSided);
-			}
-		}
-	}
-	else if (mSceneManager.mLevelActive && mPause) {
-		Mix_PauseMusic();
-		Mix_Pause(0);
-		Mix_Pause(1);
-		Mix_Pause(2);
-		Mix_Pause(3);
-		Mix_Pause(4);
-		Mix_Pause(5);
-		Mix_Pause(6);
-		Mix_Pause(7);
-		Mix_Pause(8);
-		Mix_Pause(9);
-		Mix_Pause(10);
-		Mix_Pause(11);
-		Mix_Pause(12);
-		Mix_Pause(13);
-		Mix_Pause(14);
-
-		Mix_Pause(17);
-		Mix_Pause(18);
-		Mix_Pause(19);
-
-		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
-		mBatchRenderer.DrawInBatch(glm::vec2(0.0f, 0.0f), glm::vec2(1920.0f, 1080.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.5f));
-		mBatchRenderer.EndBatch();
-		mBatchRenderer.Flush(mCamera.mUIModelMatrix);
-
-		for (const auto& pair : mSceneManager.mUIScenes.mInGamePauseButtonMap) {
-			mSceneManager.mUIScenes.mInGamePauseButtonMap[pair.first].Render(&mBatchRenderer, mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix);
-		}
-		if (mSceneManager.mUIScenes.mInGamePauseButtonMap["CONTINUE"].GetPressState()) {
-			mSceneManager.mUIScenes.mInGamePauseButtonMap["CONTINUE"].SetPressState(false);
-			mPause = false;
-			pauseTime += std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - pauseTimer).count();
-			Mix_ResumeMusic();
-			Mix_Resume(0);
-			Mix_Resume(1);
-			Mix_Resume(2);
-			Mix_Resume(3);
-			Mix_Resume(4);
-			Mix_Resume(5);
-			Mix_Resume(6);
-			Mix_Resume(7);
-			Mix_Resume(8);
-			Mix_Resume(9);
-			Mix_Resume(10);
-			Mix_Resume(11);
-			Mix_Resume(12);
-			Mix_Resume(13);
-			Mix_Resume(14);
-
-			Mix_Resume(17);
-			Mix_Resume(18);
-			Mix_Resume(19);
-		}
-		if (mSceneManager.mUIScenes.mInGamePauseButtonMap["AUTO_RETRY"].GetPressState()) {
-			if (autoRestart) {
-				autoRestart = false;
-			}
-			else if (!autoRestart) {
-				autoRestart = true;
-			}
-		}
-		if (mSceneManager.mUIScenes.mInGamePauseButtonMap["BACK_TO_MENU"].GetPressState()) {
-			mSceneManager.mUIScenes.mInGamePauseButtonMap["BACK_TO_MENU"].SetPressState(false);
-			mPause = false;
+	if (restart) {
+		if (restartMode) {
 			LoadGame();
 		}
-		if (autoRestart) {
-			mSceneManager.mUIScenes.mInGamePauseDynamicTextMap["tAUTO_RETRY"].Text = "On";
-		}
-		else if (!autoRestart) {
-			mSceneManager.mUIScenes.mInGamePauseDynamicTextMap["tAUTO_RETRY"].Text = "Off";
-		}
-
-		for (int i = 0; i < mSceneManager.mUIScenes.mInGamePauseTextToRender.size(); i++) {
-			mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, mSceneManager.mUIScenes.mInGamePauseTextToRender[i].Text, mSceneManager.mUIScenes.mInGamePauseTextToRender[i].Possition.x, mSceneManager.mUIScenes.mInGamePauseTextToRender[i].Possition.y, mSceneManager.mUIScenes.mInGamePauseTextToRender[i].Scale, mSceneManager.mUIScenes.mInGamePauseTextToRender[i].Color, mCamera.GetProjectionMatrix(), *mSceneManager.mUIScenes.mInGamePauseTextToRender[i].ModelMatrix, mSceneManager.mUIScenes.mInGamePauseTextToRender[i].CenteredX, mSceneManager.mUIScenes.mInGamePauseTextToRender[i].CenteredY, mSceneManager.mUIScenes.mInGamePauseTextToRender[i].RightSided);
-		}
-		for (auto& pair : mSceneManager.mUIScenes.mInGamePauseDynamicTextMap) {
-			mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, mSceneManager.mUIScenes.mInGamePauseDynamicTextMap[pair.first].Text, mSceneManager.mUIScenes.mInGamePauseDynamicTextMap[pair.first].Possition.x, mSceneManager.mUIScenes.mInGamePauseDynamicTextMap[pair.first].Possition.y, mSceneManager.mUIScenes.mInGamePauseDynamicTextMap[pair.first].Scale, mSceneManager.mUIScenes.mInGamePauseDynamicTextMap[pair.first].Color, mCamera.GetProjectionMatrix(), *mSceneManager.mUIScenes.mInGamePauseDynamicTextMap[pair.first].ModelMatrix, mSceneManager.mUIScenes.mInGamePauseDynamicTextMap[pair.first].CenteredX, mSceneManager.mUIScenes.mInGamePauseDynamicTextMap[pair.first].CenteredY, mSceneManager.mUIScenes.mInGamePauseDynamicTextMap[pair.first].RightSided);
-		}
-	}
-
-	levelTimeTotal = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - levelTimerTotal).count();
-	if (gameStarted && !mActor.mEscaped && !mSceneManager.mUIScenes.mTitleScreenActive) {
-		if (mPause) {
-			levelTime = levelTimeTotal - (pauseTime + std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - pauseTimer).count());
-		}
 		else {
-			levelTime = levelTimeTotal - pauseTime;
+			LoadGame(true);
 		}
-		if (!mPause) {
-			levelTime_seconds = (levelTime / 1000) % 60;
-
-			levelTime_minutes = (levelTime / 1000) / 60;
-
-			levelTime_centiseconds = (levelTime % 1000) / 10;
-		}
-		mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, "FPS: " + std::to_string(fps1), 80.0f, 1000.0f, 0.20f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix, false, false, false);
-
-		mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, std::format("{}:{:02}:{:02}", levelTime_minutes, levelTime_seconds, levelTime_centiseconds), 1840.0f, 1000.0f, 0.35f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix, false, false, true);
 	}
-}
-
-void App::UIUpdate() {
-
-	if (mActor.mDead || mActor.mEscaped) {
-		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
-		mBatchRenderer.DrawInBatch(glm::vec2(0.0f, 0.0f), glm::vec2(1920.0f, 1080.0f), glm::vec4((14.0f / 256.0f), (7.0f / 256.0f), (27.0f / 256.0f), titleScreenAlpha));
-		mBatchRenderer.EndBatch();
-		mBatchRenderer.Flush(mCamera.mUIModelMatrix);
-		if (titleScreenAlphaTimer > titleScreenAlphaTime && titleScreenAlpha < 1.0f) {
-			titleScreenAlpha += 0.004f;
-			titleScreenAlphaTimer = 0.0f;
-		}
-		if (titleScreenAlpha > 1.0f) {
-			titleScreenAlpha = 1.0f;
-		}
-		titleScreenAlphaTimer += deltaTime;
-
-		if (titleScreenMusicVolumeTimer > titleScreenMusicVolumeTime && titleScreenMusicVolume > 0) {
-			titleScreenMusicVolume -= 1;
-			titleScreenMusicVolumeTimer = 0.0f;
-		}
-		if (titleScreenMusicVolume < 0) {
-			titleScreenMusicVolume = 0;
-		}
-		titleScreenMusicVolumeTimer += deltaTime;
-	}
-
-	Mix_VolumeMusic(titleScreenMusicVolume);
-	if (titleScreenAlpha >= 1.0f) {
-		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
-		titleScreenMessageTimer += deltaTime;
-		if (titleScreenMessageTimer > titleScreenMessageTime) {
-			titleScreenMessageTimer = 0.0f;
-		}
-		if (titleScreenMessageTimer >= 1.0f) {
-			mBatchRenderer.DrawInBatch(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 240.0f), mTextOut.mTextureSize * textSizeMultiplier, 
-				static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[4]);
-			}
-			if (mActor.mEscaped) {
-				mBatchRenderer.DrawInBatch(glm::vec2(960.0f - mTextOut.mTextureSize.x * textSizeMultiplier / 2, 660.0f), mTextOut.mTextureSize * textSizeMultiplier,
-					static_cast<uint32_t>(mTextOut.mTextTextureIndex), mTextOut.mTextureSize, mTextOut.mTexturePositions[1]);
-		}
-		mBatchRenderer.EndBatch();
-		mBatchRenderer.Flush(mCamera.mUIModelMatrix);
-	}
-
 }
 
 void App::ShutDown() {

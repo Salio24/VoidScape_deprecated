@@ -867,7 +867,9 @@ void Button::CreateArrowButton(const glm::vec2& position, const int& blockSize, 
 }
 
 bool Button::GetPressState() {
-	return pressState;
+	bool buffer = pressState;
+	pressState = false;
+	return buffer;
 }
 
 bool Button::GetHoverState() {
@@ -901,23 +903,25 @@ void Button::Render(BatchRenderer* renderer, const glm::mat4& projectionMatrix, 
 	//mSize = projectionMatrix * mModelMatrix * glm::vec4(mSize.x, mSize.y, 0.0f, 0.0f);
 
 	if (!arrowButton) {
-		renderer->BeginBatch(projectionMatrix);
+		renderer->BeginBatch(projectionMatrix, &mUIModelMatrix);
 
 		renderer->DrawInBatch(mTriggerPos, mTriggerSize, glm::vec4((14.0f / 256.0f), (7.0f / 256.0f), (27.0f / 256.0f), 0.8f));
 
 		renderer->EndBatch();
-		renderer->Flush(mUIModelMatrix);
+		renderer->Flush();
 	}
-	renderer->BeginBatch(projectionMatrix);
+
+	renderer->BeginBatch(projectionMatrix, &mModelMatrix);
 
 	for(int i = 0; i < mButtonBlocks.size(); i++) {
-		renderer->DrawInBatch(mButtonBlocks[i].mSprite.mVertexData.Position, mButtonBlocks[i].mSprite.mVertexData.Size, static_cast<uint32_t>(mButtonBlocks[i].mSprite.mVertexData.TextureIndex), glm::vec2(0.03125f, 0.03125f), glm::vec2(0.0f, 0.0f), false, mButtonBlocks[i].mSprite.mVertexData.Color);
+		renderer->DrawInBatch(mButtonBlocks[i].mSprite.mVertexData.Position, mButtonBlocks[i].mSprite.mVertexData.Size, static_cast<uint32_t>(mButtonBlocks[i].mSprite.mVertexData.TextureIndex), glm::vec2(0.03125f, 0.03125f), glm::vec2(0.0f, 0.0f), 0.0f, 1.0f, false, mButtonBlocks[i].mSprite.mVertexData.Color);
 	}
 
 
 
 	renderer->EndBatch();
-	renderer->Flush(mModelMatrix);
+	renderer->Flush();
+
 
 }
 

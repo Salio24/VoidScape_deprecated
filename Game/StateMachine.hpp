@@ -53,6 +53,8 @@ public:
 
 	DeathCause mActorDeathCause = DeathCause::END;
 
+	PlayerStates mCurrentPlayerState = PlayerStates::IDLE;
+
 private:
 
 	int FallVolume{ 1 };
@@ -67,7 +69,6 @@ private:
 	float SuckedVolumeTime{ 0.2f };
 	float SuckedVolumeTimer{ 0.0f };
 
-	PlayerStates currentPlayerState = PlayerStates::IDLE;
 	PlayerStates lastState = PlayerStates::IDLE;
 
 	void CheckPlayerState(Actor& actor, MovementHandler& movementHandler);

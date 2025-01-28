@@ -10,7 +10,7 @@ StateMachine::~StateMachine() {
 
 
 bool StateMachine::CheckPlayerStateChange() {
-	return currentPlayerState != lastState;
+	return mCurrentPlayerState != lastState;
 }
 
 bool StateMachine::CompareToLastState(const PlayerStates& state) {
@@ -18,58 +18,58 @@ bool StateMachine::CompareToLastState(const PlayerStates& state) {
 }
 
 void StateMachine::CheckPlayerState(Actor& actor, MovementHandler& movementHandler) {
-	lastState = currentPlayerState;
+	lastState = mCurrentPlayerState;
 	if (!movementHandler.mIsGrounded && !movementHandler.mCanWallStick && movementHandler.mCanDoubleJump) {
 		if (actor.mVelocity.y > 0.0f) {
-			currentPlayerState = PlayerStates::JUMPING;
+			mCurrentPlayerState = PlayerStates::JUMPING;
 			// jump
 		}
 		else if (actor.mVelocity.y <= 0.0f) {
-			currentPlayerState = PlayerStates::FALLING;
+			mCurrentPlayerState = PlayerStates::FALLING;
 			// fall
 		}
 	}
 	else if (!movementHandler.mIsGrounded && !movementHandler.mCanWallStick && !movementHandler.mCanDoubleJump) {
 		// double jump
 		if (actor.mVelocity.y > 0.0f) {
-			currentPlayerState = PlayerStates::DOUBLE_JUMPING;
+			mCurrentPlayerState = PlayerStates::DOUBLE_JUMPING;
 			// jump
 		}
 		else if (actor.mVelocity.y <= 0.0f) {
-			currentPlayerState = PlayerStates::FALLING;
+			mCurrentPlayerState = PlayerStates::FALLING;
 			// fall
 		}
 	}
 	else if (!movementHandler.mIsGrounded && movementHandler.mCanWallStick) {
-		currentPlayerState = PlayerStates::WALLSLIDING;
+		mCurrentPlayerState = PlayerStates::WALLSLIDING;
 		// wall slide
 	}
 	else {
 		if (!(actor.mVelocity.x < 1.0f && actor.mVelocity.x > -1.0f) && (movementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] || movementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)])) {
-			currentPlayerState = PlayerStates::RUNNING;
+			mCurrentPlayerState = PlayerStates::RUNNING;
 			// run
 		}
 		else {
-			currentPlayerState = PlayerStates::IDLE;
+			mCurrentPlayerState = PlayerStates::IDLE;
 			// idle
 		}
 	}
 	if (movementHandler.mIsSliding && movementHandler.mIsGrounded) {
-		currentPlayerState = PlayerStates::SLIDING;
+		mCurrentPlayerState = PlayerStates::SLIDING;
 		// slide
 	}
 	if (movementHandler.mIsSlamming) {
-		currentPlayerState = PlayerStates::SLAMMING;
+		mCurrentPlayerState = PlayerStates::SLAMMING;
 		// slam
 	} 
 	if (actor.mDead) {
-		currentPlayerState = PlayerStates::DEAD;
+		mCurrentPlayerState = PlayerStates::DEAD;
 	}
 	if (actor.mIsSucked || actor.mIsSuckedPortal) {
-		currentPlayerState = PlayerStates::SUCKED;
+		mCurrentPlayerState = PlayerStates::SUCKED;
 	}
 	if (actor.mEscaped) {
-		currentPlayerState = PlayerStates::ESCAPED;
+		mCurrentPlayerState = PlayerStates::ESCAPED;
 	}
 }
 
@@ -86,7 +86,7 @@ void StateMachine::Update(MovementHandler& movementHandler, AnimationHandler& an
 		break;
 	}
 
-	switch (currentPlayerState) {
+	switch (mCurrentPlayerState) {
 	case PlayerStates::RUNNING:
 		if (runAnimationOneShot) {
 			animationHandler.RunAnimation.AnimationTimer = std::chrono::high_resolution_clock::now();
@@ -273,26 +273,26 @@ void StateMachine::Update(MovementHandler& movementHandler, AnimationHandler& an
 	}
 
 	if (CheckPlayerStateChange()) {
-		if (CompareToLastState(PlayerStates::SLAMMING) && currentPlayerState != PlayerStates::SLAMMING) {
+		if (CompareToLastState(PlayerStates::SLAMMING) && mCurrentPlayerState != PlayerStates::SLAMMING) {
 			audioHandler.PlayNextLandHardSound();
 		}
 
-		if (CompareToLastState(PlayerStates::FALLING) && currentPlayerState != PlayerStates::FALLING && currentPlayerState != PlayerStates::SLAMMING && currentPlayerState != PlayerStates::DOUBLE_JUMPING && currentPlayerState != PlayerStates::DEAD) {
+		if (CompareToLastState(PlayerStates::FALLING) && mCurrentPlayerState != PlayerStates::FALLING && mCurrentPlayerState != PlayerStates::SLAMMING && mCurrentPlayerState != PlayerStates::DOUBLE_JUMPING && mCurrentPlayerState != PlayerStates::DEAD) {
 			audioHandler.PlayNextLandSoftSound();
 		}
 
-		if (currentPlayerState != PlayerStates::SLIDING) {
+		if (mCurrentPlayerState != PlayerStates::SLIDING) {
 			Mix_HaltChannel(5);
 		}
-		if (currentPlayerState != PlayerStates::WALLSLIDING) {
+		if (mCurrentPlayerState != PlayerStates::WALLSLIDING) {
 			Mix_HaltChannel(6);
 		}
-		if (currentPlayerState != PlayerStates::FALLING) {
+		if (mCurrentPlayerState != PlayerStates::FALLING) {
 			Mix_HaltChannel(4);
 			Mix_Volume(4, 0);
 			FallVolume = 1;
 		}
-		if (currentPlayerState != PlayerStates::SUCKED) {
+		if (mCurrentPlayerState != PlayerStates::SUCKED) {
 			Mix_HaltChannel(10);
 			Mix_Volume(10, 0);
 			SuckedVolume = 1;
@@ -304,6 +304,6 @@ void StateMachine::Reset() {
 	deadAnimOneShot = true;
 	deadAnimDone = false;
 
-	currentPlayerState = PlayerStates::IDLE;
+	mCurrentPlayerState = PlayerStates::IDLE;
 	lastState = PlayerStates::IDLE;
 }

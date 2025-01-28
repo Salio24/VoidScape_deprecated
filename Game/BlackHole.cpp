@@ -11,7 +11,7 @@ BlackHole::~BlackHole() {
 
 }
 
-void BlackHole::Update(std::vector<GameObject>* blocks, Actor& actor, const float& deltaTime, Animation& birthAnim, Animation& loopAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle, const float globalSFXVolumeModifier) {
+void BlackHole::Update(std::vector<GameObject>* blocks, Actor& actor, const float& deltaTime, Animation& birthAnim, Animation& loopAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle, const float globalSFXVolumeModifier, bool test) {
 	if (!birthTimerOneShot && !isBorn) {
 		mSprite.mVertexData.TexturePosition = loopAnim.TexturePosition;
 		birthAnim.AnimationTimer = std::chrono::high_resolution_clock::now();
@@ -59,9 +59,12 @@ void BlackHole::Update(std::vector<GameObject>* blocks, Actor& actor, const floa
 
 
 	// comment to disable black hole "spread"
+	if (test) {
 	AABBSize.x += AABBVelocityMultiplier * deltaTime;
 
-	///*
+	}
+
+	/*
 	if (RectVsRect(AABBPos, AABBSize, actor.mPosition, actor.mSprite.mVertexData.Size) && actor.mIsSucked == false && actor.mConsumedByBlackHole == false && actor.mIsSuckedPortal == false && actor.mEscaped == false && actor.mDead == false) {
 		actor.mIsCollidable = false;
 		actor.mIsSucked = true;
@@ -102,8 +105,10 @@ void BlackHole::Update(std::vector<GameObject>* blocks, Actor& actor, const floa
 			actor.mFlyAngle += 0.1f * deltaTime;
 		}
 	}
+	*/
 
 	//maybe create a vector of all sucked blocks
+	// create a check to cull blocks that are further than the black hole aabb
 	for (int i = 0; i < blocks->size(); i++) {
 		if (blocks->at(i).mIsSucked == true && blocks->at(i).mConsumedByBlackHole == false) {
 			blocks->at(i).mIsCollidable = false;

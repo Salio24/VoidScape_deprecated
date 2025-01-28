@@ -23,22 +23,16 @@ public:
 	void StartUp(ShaderProgram* program, GLuint& PipelineProgramID);
 	void ShutDown();
 
-	void BeginBatch(const glm::mat4& ProjectionMatrix);
+	void BeginBatch(const glm::mat4& ProjectionMatrix, const glm::mat4* modelMatrix = nullptr);
 	void EndBatch();
-	void Flush(const glm::mat4& ModelMatrix = glm::mat4(1.0f));
+	void Flush();
 
-	void DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::vec4& color, const glm::mat4& ProjectionMatrix, const glm::mat4& ModelMatrix = glm::mat4(1.0f));
-	void DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::mat4& ProjectionMatrix, uint32_t textureID, const glm::vec2& textureSize = glm::vec2(1.0f, 1.0f), const glm::vec2& texturePosition = glm::vec2(0.0f, 0.0f), const glm::mat4& ModelMatrix = glm::mat4(1.0f), const bool& drawFliped = false);
+	void DrawSeperatly(const glm::vec2& position, glm::vec2 size, const glm::vec4& color, const glm::mat4& ProjectionMatrix, const glm::mat4* ModelMatrix = nullptr);
+	void DrawSeperatly(const glm::mat4& ProjectionMatrix, const glm::vec2 position, glm::vec2 size, uint32_t textureID, const glm::vec2 textureSize, const glm::vec2 texturePosition = glm::vec2(0.0f, 0.0f), const float rotationAnlge = 0.0f, const float anlgeModifier = 1.0f, const bool drawFliped = false, const glm::mat4* ModelMatrix = nullptr, const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 	void DrawInBatch(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
 
-	void DrawInBatch(const glm::vec2& position, const glm::vec2& size, uint32_t textureID, const glm::vec2& textureSize = glm::vec2(1.0f, 1.0f), const glm::vec2& texturePosition = glm::vec2(0.0f, 0.0f), const bool& drawFliped = false, const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
-
-	void Test();
-
-	void DrawInBatch(const glm::vec2& position, const glm::vec2& size, uint32_t textureID, const glm::vec2& textureSize, const glm::vec2& texturePosition, float flyAngle, float flyOrientation);
-
-	void FlushFly();
+	void DrawInBatch(const glm::vec2 position, const glm::vec2 size, uint32_t textureID, const glm::vec2 textureSize, const glm::vec2 texturePosition = glm::vec2(0.0f, 0.0f), const float rotationAnlge = 0.0f, const float anlgeModifier = 1.0f, const bool drawFliped = false, const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
 
 private:
 	App* app_;
@@ -51,6 +45,8 @@ private:
 	Box* QuadBufferPtr{ nullptr };
 
 	glm::mat4 currentProjectionMatrix;
+	const glm::mat4* currentModelMatrix;
+
 
 	ShaderProgram* currentProgram;
 	GLuint currentPipelineProgramID;
@@ -62,7 +58,4 @@ private:
 	static const size_t maxQuadCount{ 1000 };
 	static const size_t maxVertexCount{ maxQuadCount * 4 };
 	static const size_t maxIndexCount{ maxQuadCount * 6 };
-
-	//deprecated
-	void UniformVariableLinkageAndPopulatingWithMatrix(const GLchar* uniformLocation, glm::mat4 matrix, const GLuint& PipelineProgram);
 };

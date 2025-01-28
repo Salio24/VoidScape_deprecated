@@ -17,7 +17,7 @@ public:
 
 	~BlackHole();
 
-	void Update(std::vector<GameObject>* blocks, Actor& actor, const float& deltaTime, Animation& loopAnim, Animation& birthAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle, const float globalSFXVolumeModifier);
+	void Update(std::vector<GameObject>* blocks, Actor& actor, const float& deltaTime, Animation& loopAnim, Animation& birthAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle, const float globalSFXVolumeModifier, bool test);
 
 	void Reset();
 	 

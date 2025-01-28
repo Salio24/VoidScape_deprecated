@@ -66,36 +66,41 @@ public:
 
 	BlackHole mBlackHole;
 
-	TextOut mTextOut;
-
 	StateMachine mStateMachine;
 
 	Camera mCamera;
-
 
 	PipelineManager mPipelineManager;
 
 	ShaderProgram mGeneralShaderProgram;
 	ShaderProgram mTextShaderProgram;
 	ShaderProgram mBackgroundShaderProgram;
-	ShaderProgram mBackgroundFramebufferShaderProgram;
-
+	ShaderProgram mBackgroundFramebufferShaderProgram; 
 
 	PipelineProgram mPipelineProgram;
 
 	SceneManager mSceneManager;
 
-	BackgroundRenderer mBackgroundRenderer;
+	BackgroundRenderer  mBackgroundRenderer;
 
 	TextRenderer mTextRenderer;
 
 	bool mQuit{ false };
 	bool mPause{ false };
 
-	glm::ivec2 viewportOffset{ 0 };
+	Settings mSettings;
+
+	SaveData mSaveData;
 
 	int mWindowWidth{ 1920 };
 	int mWindowHeight{ 1080 };
+
+	std::vector<std::string> mWindowModes;
+
+	std::vector<glm::ivec2> mResolutions;
+
+	bool testing{ false };
+
 private: 
 	App();
 
@@ -113,38 +118,20 @@ private:
 
 	void UpdatePlayground();
 
-	void UIUpdate();
-
 	static void APIENTRY GLDebugMessageCallback(GLenum source, GLenum type, GLuint id,
 		GLenum severity, GLsizei length,
 		const GLchar* message, const void* param);
 
-	bool vsync      { false };
-	bool debugMode  { true };
 	bool gameStarted{ false };
-	
-	bool autoRestart{ false };
-
-	int SFXVolume{ 3 };
-	int MusicVolume{ 3 };
 
 	float deltaTimeRaw;
 	float deltaTime      { 0.1f };
 	float deltaTimeBuffer{ 0.0f };
 
 	float textSizeMultiplier    { 800.0f };
-	float titleScreenAlpha      { 0.0f };
-	int   titleScreenMusicVolume{ 128 };
 
-	float titleScreenAlphaTime { 0.01f };
-	float titleScreenAlphaTimer{ 0.0f };
-	bool titleScreenDarkened{ false };
-
-	float titleScreenMessageTime { 2.0f };
-	float titleScreenMessageTimer{ 0.0f };
-
-	float titleScreenMusicVolumeTime { 0.05f };
-	float titleScreenMusicVolumeTimer{ 0.0f };
+	//float titleScreenMessageTime { 2.0f };
+	//float titleScreenMessageTimer{ 0.0f };
 
 	float startMessageTime { 2.0f };
 	float startMessageTimer{ 0.0f };
@@ -152,33 +139,7 @@ private:
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> TimePoint1;
 	std::chrono::time_point<std::chrono::system_clock, std::chrono::duration<long long, std::ratio<1, 10000000>>> TimePoint2;
 
-	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> levelTimerTotal;
-	std::chrono::time_point < std::chrono::steady_clock, std::chrono::duration<long long, std::ratio < 1, 1000000000>>> pauseTimer;
-
-	long long levelTimeTotal{ 0 };
-	long long levelTime{ 0 };
-	long long pauseTime{ 0 };
-
-	int levelTime_minutes{ 0 };
-	int levelTime_seconds{ 0 };
-	int levelTime_centiseconds{ 0 };
-
-	int best_levelTime_minutes{ 0 };
-	int best_levelTime_seconds{ 0 };
-	int best_levelTime_centiseconds{ 0 };
-
-	bool newBestTimeMessageOneShot{ false };
-
 	SDL_Window* mWindow     { nullptr };
 	SDL_GLContext mGlContext{ nullptr };
 
-	glm::ivec2 screenSize{ 0 };
-
-	std::vector<glm::ivec2> resolutions;
-
-	int currentResolutionIndex{ 4 };
-
-	std::vector<std::string> windowModes;
-
-	int currentWindowModeIndex{ 0 };
 };

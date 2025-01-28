@@ -170,8 +170,10 @@ void CollisionUpdate(const std::vector<GameObject>* blocks, Actor& actor, bool& 
 	// Top right corner of broad-phase-box
 	glm::vec2 B(actor.mPosition.x + 4 * actor.mSprite.mVertexData.Size.x, actor.mPosition.y + 4 * actor.mSprite.mVertexData.Size.y);
 
-	LeftWallHug = false;
-	RightWallHug = false;
+
+	// use normals for those as well
+	LeftWallHug   = false;
+	RightWallHug  = false;
 	BottomWallHug = false;
 	for (int i = 0; i < blocks->size(); i++) {
 		if (blocks->at(i).mSprite.mVertexData.Position.x > A.x && blocks->at(i).mSprite.mVertexData.Position.x < B.x && blocks->at(i).mSprite.mVertexData.Position.y > A.y && blocks->at(i).mSprite.mVertexData.Position.y < B.y && actor.mIsCollidable == true) {
