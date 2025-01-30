@@ -1,0 +1,11 @@
+{
+    "MusicVolume": 5,
+    "SFXVolume": 5,
+    "VSync": false,
+    "autoRestart": false,
+    "currentResolutionIndex": 4,
+    "currentWindowModeIndex": 0,
+    "debugMode": false,
+    "showFpsInGame": true,
+    "textSizeMultiplier": 800.0
+}
