@@ -38,12 +38,12 @@ struct Text {
 
 struct Settings {
 	bool VSync{ false };
-	bool debugMode{ true };
+	bool debugMode{ false };
 	bool autoRestart{ false };
 	bool showFpsInGame{ true };
 
-	int SFXVolume{ 3 };
-	int MusicVolume{ 3 };
+	int SFXVolume{ 5 };
+	int MusicVolume{ 5 };
 
 	float textSizeMultiplier{ 800.0f };
 

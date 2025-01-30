@@ -177,7 +177,7 @@ void App::PostStartUp() {
 	mBatchRenderer.StartUp(&mGeneralShaderProgram, mPipelineProgram.ID);
 	
 	mTextureHandler.InitTextureArray(GL_RGBA8, 16, 16);
-	mTextureHandler.InitTextureArray(GL_RGBA8, 32, 748);
+	mTextureHandler.InitTextureArray(GL_RGBA8, 32, 48);
 	mTextureHandler.InitTextureArray(GL_RGBA8, 128, 600);
 	mTextureHandler.InitTextureArray(GL_RGBA8, 512, 32);
 

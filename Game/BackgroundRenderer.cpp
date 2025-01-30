@@ -121,18 +121,18 @@ void BackgroundRenderer::LoadLevelBackground(ShaderProgram* shader, ShaderProgra
 	shader->UseInPipeline(pipelineProgramID);
 	shader->SetInt("uTextureArray", 1);
 
-	SDL_Surface* layer0Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0000_9.png"));
-	SDL_Surface* layer1Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0001_8.png"));
-	SDL_Surface* layer2Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0002_7.png"));
-	SDL_Surface* layer3Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0003_6.png"));
-	SDL_Surface* layer4_lightsSurface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0004_Lights.png"));
-	SDL_Surface* layer5Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0005_5.png"));
-	SDL_Surface* layer6Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0006_4.png"));
-	SDL_Surface* layer7_lightsSurface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0007_Lights.png"));
-	SDL_Surface* layer8Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0008_3.png"));
-	SDL_Surface* layer9Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0009_2.png"));
-	SDL_Surface* layer10Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0010_1.png"));
-	SDL_Surface* layer11Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0011_0.png"));
+	SDL_Surface* layer0Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0000_9.png"));
+	SDL_Surface* layer1Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0001_8.png"));
+	SDL_Surface* layer2Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0002_7.png"));
+	SDL_Surface* layer3Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0003_6.png"));
+	SDL_Surface* layer4_lightsSurface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0004_Lights.png"));
+	SDL_Surface* layer5Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0005_5.png"));
+	SDL_Surface* layer6Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0006_4.png"));
+	SDL_Surface* layer7_lightsSurface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0007_Lights.png"));
+	SDL_Surface* layer8Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0008_3.png"));
+	SDL_Surface* layer9Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0009_2.png"));
+	SDL_Surface* layer10Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0010_1.png"));
+	SDL_Surface* layer11Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background_layers/Layer_0011_0.png"));
 	glActiveTexture(GL_TEXTURE30);
 
 	glGenTextures(1, &textureArray);
