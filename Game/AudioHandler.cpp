@@ -1,5 +1,4 @@
 #include "AudioHandler.hpp"
-#include <iostream>
 
 AudioHandler::AudioHandler() {
 }

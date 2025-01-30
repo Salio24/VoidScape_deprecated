@@ -1,14 +1,5 @@
 #include "Camera.hpp"
-#include <iostream>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/rotate_vector.hpp>
-#include <glm/vec3.hpp>
-#include <algorithm>
-#include "glm/gtx/string_cast.hpp"
 #include "App.hpp"
-#include <glm/gtc/matrix_transform.hpp>
-#include "Sign.hpp"
-
 
 Camera::Camera() : app_(nullptr) {
 

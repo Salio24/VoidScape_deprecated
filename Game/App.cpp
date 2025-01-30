@@ -57,10 +57,6 @@ void App::StartUp() {
 	mSettings.screenSize.x = bounds.w;
 	mSettings.screenSize.y = bounds.h;
 
-	if (IMG_Init(IMG_INIT_PNG) == 0) {
-		std::cerr << "SDL3_image could not be initialized" << std::endl;
-		exit(1);
-	}
 	if (Mix_OpenAudio(0, NULL) < 0)
 	{
 		std::cerr << "SDL3_mixer could not be initialized" << std::endl;
@@ -622,7 +618,6 @@ void App::ShutDown() {
 	glDeleteProgram(mGraphicsPipelineShaderProgram);
 
 	Mix_Quit();
-	IMG_Quit();
 	SDL_Quit();
 }
 

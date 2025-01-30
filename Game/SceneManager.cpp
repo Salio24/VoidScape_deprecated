@@ -1,4 +1,3 @@
-#pragma once
 #include "SceneManager.hpp" 
 
 SceneManager::SceneManager() {

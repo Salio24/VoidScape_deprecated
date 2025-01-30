@@ -1,7 +1,7 @@
 #pragma once
 #include <SDL3/SDL_mixer.h>
 #include <array>
-
+#include <iostream>
 
 class AudioHandler {
 public:

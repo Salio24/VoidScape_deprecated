@@ -1,5 +1,4 @@
 #include "MovementHandler.hpp"
-#include "glm/gtx/string_cast.hpp"
 
 MovementHandler::MovementHandler() {
 }

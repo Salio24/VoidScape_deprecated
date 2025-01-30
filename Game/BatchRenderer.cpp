@@ -1,6 +1,5 @@
 #include "BatchRenderer.hpp"
 #include "App.hpp"
-#include <cstddef>
 
 BatchRenderer::BatchRenderer() : app_(nullptr) {
 

@@ -9,6 +9,7 @@
 #include <glm/mat4x4.hpp>
 #include "ShaderProgram.hpp"
 #include "HelperStructs.hpp"
+#include <cstddef>
 
 class App;
 

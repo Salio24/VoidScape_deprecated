@@ -1,13 +1,5 @@
-#define GLM_ENABLE_EXPERIMENTAL
 #include "CollisionHandler.hpp"
-#include "glm/gtx/string_cast.hpp"
 #include "Actor.hpp"
-
-
-//bool PointVsRect(const glm::vec2& p, const Box* r)
-//{
-//	return (p.x >= r->Position.x && p.y >= r->Position.y && p.x < r->Position.x + r->Size.x && p.y < r->Position.y + r->Size.y);
-//}
 
 bool PointVsRect(const glm::vec2& point, const glm::vec2& boxSize, const glm::vec2& boxPos)
 {
@@ -207,10 +199,6 @@ void CollisionUpdate(const std::vector<GameObject>* blocks, Actor& actor, bool& 
 			}
 		}
 	}
-
-	//std::cout << contactNormal.x << ", " << contactNormal.y << std::endl;
-
-
 
 	std::sort(colidedBlocks.begin(), colidedBlocks.end(), [](const std::pair<int, float>& a, const std::pair<int, float>& b) {
 		return a.second < b.second;

@@ -28,12 +28,6 @@
     <Filter Include="Externals">
       <UniqueIdentifier>{ff98ddbf-1aa1-46b7-888d-f6386ea91253}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Level">
-      <UniqueIdentifier>{64b38a90-33bf-4a8c-a7f7-23d4e583cfe1}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Level">
-      <UniqueIdentifier>{63cea188-20f6-4006-960c-4524d3e432a2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Sound">
       <UniqueIdentifier>{7bda2ada-b1a3-4630-8dc1-68f0892b4d97}</UniqueIdentifier>
     </Filter>

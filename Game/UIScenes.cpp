@@ -731,7 +731,7 @@ Button::~Button() {
 void Button::CreateBoxButton(glm::ivec2 size, const glm::vec2& position, const int& blockSize, const glm::vec4& color, const int& tilesetOffset) {
 	if (!mCreated) {
 		if (size.x < 2 || size.y < 2) {
-			std::cerr << "Button size must be at least 2x2, aka wrong size dumbass" << std::endl;
+			std::cerr << "Button size must be at least 2x2, wrong size" << std::endl;
 		}
 
 		std::random_device rd;
@@ -832,7 +832,7 @@ void Button::CreateBoxButton(glm::ivec2 size, const glm::vec2& position, const i
 		mCreated = true;
 	}
 	else {
-		std::cerr << "ACHTUNG: Button already created dumbass" << std::endl;
+		std::cerr << "ACHTUNG: Button already created" << std::endl;
 	}
 }
 
@@ -880,7 +880,7 @@ void Button::CreateArrowButton(const glm::vec2& position, const int& blockSize, 
 		arrowButton = true;
 	}
 	else {
-		std::cerr << "ACHTUNG: Button already created dumbass" << std::endl;
+		std::cerr << "ACHTUNG: Button already created" << std::endl;
 	}
 }
 

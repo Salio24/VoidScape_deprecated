@@ -1,5 +1,4 @@
 #include "BackgroundRenderer.hpp"
-#include <algorithm>
 
 BackgroundRenderer::BackgroundRenderer() {
 

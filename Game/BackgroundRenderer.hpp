@@ -6,6 +6,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_image.h>
 #include "Texture.hpp"
+#include <algorithm>
 
 struct LevelBackgroundLayer {
 	Box b1;
