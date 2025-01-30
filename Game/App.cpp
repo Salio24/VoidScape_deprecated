@@ -501,17 +501,17 @@ void App::Update() {
 		mBatchRenderer.EndBatch();
 		mBatchRenderer.Flush();
 
-		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[512].first);
 		mEscapePortal.Update(mAnimationHandler.EscapePortalAnimation, deltaTime, mActor, mAudioHandler.PortalEscape, mAudioHandler.PortalIdle, mAudioHandler.mGlobalSFXVolumeModifier);
 		if (mEscapePortal.mSprite.mVertexData.Position.x + mEscapePortal.mSprite.mVertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 			&& mEscapePortal.mSprite.mVertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f)) {
+			mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[512].first);
 			mBatchRenderer.DrawInBatch(mEscapePortal.mSprite.mVertexData.Position, mEscapePortal.mSprite.mVertexData.Size, mEscapePortal.mSprite.mVertexData.TextureIndex, mAnimationHandler.EscapePortalAnimation.Size, mEscapePortal.mSprite.mVertexData.TexturePosition);
+			mBatchRenderer.EndBatch();
+			mBatchRenderer.Flush();
 		}
 		
-		mBatchRenderer.EndBatch();
-		mBatchRenderer.Flush();
 
 		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
 		glActiveTexture(GL_TEXTURE0);
