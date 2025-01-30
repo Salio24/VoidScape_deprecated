@@ -11,7 +11,7 @@ BlackHole::~BlackHole() {
 
 }
 
-void BlackHole::Update(std::vector<GameObject>* blocks, Actor& actor, const float& deltaTime, Animation& birthAnim, Animation& loopAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle, const float globalSFXVolumeModifier, bool test) {
+void BlackHole::Update(std::vector<GameObject>* blocks, Actor& actor, const float& deltaTime, Animation& birthAnim, Animation& loopAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle, const float globalSFXVolumeModifier, DeathCause actorDeathCause) {
 	if (!birthTimerOneShot && !isBorn) {
 		mSprite.mVertexData.TexturePosition = loopAnim.TexturePosition;
 		birthAnim.AnimationTimer = std::chrono::high_resolution_clock::now();
@@ -59,13 +59,10 @@ void BlackHole::Update(std::vector<GameObject>* blocks, Actor& actor, const floa
 
 
 	// comment to disable black hole "spread"
-	if (test) {
 	AABBSize.x += AABBVelocityMultiplier * deltaTime;
 
-	}
-
-	/*
-	if (RectVsRect(AABBPos, AABBSize, actor.mPosition, actor.mSprite.mVertexData.Size) && actor.mIsSucked == false && actor.mConsumedByBlackHole == false && actor.mIsSuckedPortal == false && actor.mEscaped == false && actor.mDead == false) {
+	///*
+	if (RectVsRect(AABBPos, AABBSize, actor.mPosition, actor.mSprite.mVertexData.Size) && actor.mIsSucked == false && actor.mConsumedByBlackHole == false && actor.mIsSuckedPortal == false && actor.mEscaped == false && !(actor.mDead && actorDeathCause != DeathCause::LAVA)) {
 		actor.mIsCollidable = false;
 		actor.mIsSucked = true;
 		actor.mFlyDirectionNormalized = glm::normalize(epicenterAABBPos - actor.mPosition);
@@ -105,7 +102,7 @@ void BlackHole::Update(std::vector<GameObject>* blocks, Actor& actor, const floa
 			actor.mFlyAngle += 0.1f * deltaTime;
 		}
 	}
-	*/
+	//*/
 
 	//maybe create a vector of all sucked blocks
 	// create a check to cull blocks that are further than the black hole aabb
@@ -131,23 +128,14 @@ void BlackHole::Update(std::vector<GameObject>* blocks, Actor& actor, const floa
 				blocks->at(i).mFlyAngleTarget = glm::acos(dot);
 			}
 
-			glm::mat4 model = glm::mat4(1.0f);
-
-			glm::vec2 center = glm::vec2(blocks->at(i).mSprite.mVertexData.Position.x + blocks->at(i).mSprite.mVertexData.Size.x / 2, blocks->at(i).mSprite.mVertexData.Position.y + blocks->at(i).mSprite.mVertexData.Size.y / 2);
-
-			model = glm::translate(model, glm::vec3(center, 0.0f));
-
 			float crossProduct = glm::cross(blocks->at(i).mFlyDirectionNormalized, glm::vec2(-1.0f, 0.0f));
 
 			if (crossProduct > 0) {
 				blocks->at(i).mFlyAngleOrientation = -1.0f;
-				model = glm::rotate(model, -blocks->at(i).mFlyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
 			}
 			else if (crossProduct < 0) {
 				blocks->at(i).mFlyAngleOrientation = 1.0f;
-				model = glm::rotate(model, blocks->at(i).mFlyAngle, glm::vec3(0.0f, 0.0f, 1.0f));
 			}
-			blocks->at(i).mModelMatrix = glm::translate(model, glm::vec3(-center, 0.0f));
 
 			if (blocks->at(i).mFlyAngle < blocks->at(i).mFlyAngleTarget) {
 				blocks->at(i).mFlyAngle += 1.0f * deltaTime;

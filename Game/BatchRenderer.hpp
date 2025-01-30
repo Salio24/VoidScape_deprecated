@@ -10,8 +10,6 @@
 #include "ShaderProgram.hpp"
 #include "HelperStructs.hpp"
 
-// usage On StartUp BatchRenderer::Startup -> in update 1st, BatchRenderer::BeginBatch, 2nd, BatchRenderer::Draw,
-// 3rd BatchRenderer::EndBatch, 4th BatchRenderer::Flush, On ShutDown BatchRenderer::Shutdown
 class App;
 
 class BatchRenderer {
@@ -23,7 +21,7 @@ public:
 	void StartUp(ShaderProgram* program, GLuint& PipelineProgramID);
 	void ShutDown();
 
-	void BeginBatch(const glm::mat4& ProjectionMatrix, const glm::mat4* modelMatrix = nullptr);
+	void BeginBatch(const glm::mat4& ProjectionMatrix, const glm::mat4* modelMatrix = nullptr, int slot = 0);
 	void EndBatch();
 	void Flush();
 
@@ -50,6 +48,7 @@ private:
 
 	ShaderProgram* currentProgram;
 	GLuint currentPipelineProgramID;
+	int currentTextureSlot;
 
 	GLuint VAO{ 0 };
 	GLuint VBO{ 0 };

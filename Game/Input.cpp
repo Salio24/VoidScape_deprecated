@@ -45,61 +45,39 @@ void InputManager::Input() {
 		}
 		if (e.type == SDL_EVENT_KEY_UP) {
 
-
-
-			if (e.key.scancode == mJUMP_Bind) {
+			if (e.key.scancode == mControls.JUMP_KEY_BIND) {
 				app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::SPACE)] = false;
 				app().mMovementHandler.mSpacebarOneShot = true;
-			} else if (e.key.scancode == mDUCK_Bind) {
+			} else if (e.key.scancode == mControls.DUCK_KEY_BIND) {
 				app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::DUCK)] = false;
 				app().mMovementHandler.mDuckOneShot = true;
-			} else if (e.key.scancode == mMOVE_LEFT_Bind) {
+			} else if (e.key.scancode == mControls.LEFT_KEY_BIND) {
 				app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] = false;
-			} else if (e.key.scancode == mMOVE_RIGHT_Bind) {
+			} else if (e.key.scancode == mControls.RIGHT_KEY_BIND) {
 				app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)] = false;
-			} else if (e.key.scancode == mMOVE_UP_Bind) {
-				app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_UP)] = false;
-			} else if (e.key.scancode == mMOVE_DOWN_Bind) {
-				app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_DOWN)] = false;
-			}
-			
-
+			} 
 
 		}
 		const bool* state = SDL_GetKeyboardState(nullptr);
-		if (state[SDL_SCANCODE_T]) {
-			app().LoadGame(true);
-		}
-		if (state[SDL_SCANCODE_E]) {
-			//app().LoadGame();
-		}
-		if (state[mJUMP_Bind]) {
+		if (state[mControls.JUMP_KEY_BIND]) {
 			app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::SPACE)] = true;
 		}
-		if (state[mMOVE_UP_Bind]) {
-			app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_UP)] = true;
-		}
-		if (state[mMOVE_DOWN_Bind]) {
-			app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_DOWN)] = true;
-		}
-		if (state[mDUCK_Bind]) {
+		if (state[mControls.DUCK_KEY_BIND]) {
 			app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::DUCK)] = true;
 		}
-		if (state[mMOVE_LEFT_Bind]) {
+		if (state[mControls.LEFT_KEY_BIND]) {
 			app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_LEFT)] = true;
 		}
-		if (state[mMOVE_RIGHT_Bind]) {
+		if (state[mControls.RIGHT_KEY_BIND]) {
 			app().mMovementHandler.mKeyboadStates[static_cast<int>(MovementState::MOVE_RIGHT)] = true;
 		}
-		if (state[SDL_SCANCODE_P]) {
-			app().testing = true;
-		}
-		if (state[SDL_SCANCODE_O]) {
-			//app().mSceneManager.mUIScenes.mTitleScreenActive = true;
-			app().mPause = true;
-		}
-		if (state[SDL_SCANCODE_GRAVE]) {
-			app().mQuit = true;
+		if (app().mSettings.debugMode) {
+			if (state[SDL_SCANCODE_T]) {
+				app().LoadGame(true);
+			}
+			if (state[SDL_SCANCODE_GRAVE]) {
+				app().mQuit = true;
+			}
 		}
 	}
 

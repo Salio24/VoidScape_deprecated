@@ -50,6 +50,9 @@ void Camera::Update(glm::vec2& actorVelocity, glm::vec2& actorScreenPosition, co
 			if (mCameraOffset.x > 0.0f && cameraOffsetTimerBuffer <= 0.0f && cameraOffsetTimerBuffer2 <= 0.0f) {
 				if (mCameraOffset.x > 0.25f) {
 					mCameraOffset.x -= 36.0f * deltaTime;
+					if (mCameraOffset.x < 0.0f) {
+						mCameraOffset.x = 0.0f;
+					}
 				}
 				else {
 					mCameraOffset.x = 0;
@@ -58,6 +61,9 @@ void Camera::Update(glm::vec2& actorVelocity, glm::vec2& actorScreenPosition, co
 			else if (mCameraOffset.x < 0.0f && cameraOffsetTimerBuffer <= 0.0f && cameraOffsetTimerBuffer2 <= 0.0f) {
 				if (mCameraOffset.x < -0.25f) {
 					mCameraOffset.x += 36.0f * deltaTime;
+					if (mCameraOffset.x > 0.0f) {
+						mCameraOffset.x = 0.0f;
+					}
 				}
 				else {
 					mCameraOffset.x = 0;

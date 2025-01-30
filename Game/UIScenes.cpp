@@ -102,7 +102,7 @@ void UIScenes::LoadMainMenuTab(const int& tilesetOffset) {
 
 	Text y;
 	y.Possition = glm::vec2(960.0f, 900.0f);
-	y.Color = glm::vec3(0.80859375f, 0.80078125f, 0.81640625f);
+	y.Color = glm::vec3(1.0f, 0.9f, 1.0f);
 	y.Text = "Void Scape";
 	y.Scale = 1.0f;
 	mTextToRender.push_back(y);
@@ -417,7 +417,7 @@ void UIScenes::LoadMainMenuControlsTab(const int& tilesetOffset) {
 	}
 }
 
-void UIScenes::LoadMainMenuLevelsTab(const int& tilesetOffset) {
+void UIScenes::LoadMainMenuLevelsTab(const int& tilesetOffset, bool debugMode) {
 	mActiveTab = MenuTabs::LEVELS;
 
 	glm::vec4 color(0.7f, 0.7f, 0.7f, 1.0f);
@@ -449,20 +449,23 @@ void UIScenes::LoadMainMenuLevelsTab(const int& tilesetOffset) {
 
 		mTextToRender.push_back(t);
 		mTextToRender.back().ModelMatrix = &mButtonMap["LEVEL_1"].mModelMatrix;
-	} {
-		Button b;
-		Text t;
+	}
+	if (debugMode) {
+		{
+			Button b;
+			Text t;
 
-		b.CreateBoxButtonCentered(glm::ivec2(20, 3), glm::vec2(960.0f, 830.0f) + glm::vec2(-1920.0f, 0.0f), 30, color, tilesetOffset);
-		b.mHoverReactive = true;
-		t.Possition = glm::vec2(960.0f, 830.0f) + glm::vec2(-1920.0f, 0.0f);
-		t.Color = glm::vec3(0.80859375f, 0.80078125f, 0.81640625f);
-		t.Text = "TEST LEVEL";
-		t.Scale = 0.25f;
+			b.CreateBoxButtonCentered(glm::ivec2(20, 3), glm::vec2(960.0f, 830.0f) + glm::vec2(-1920.0f, 0.0f), 30, color, tilesetOffset);
+			b.mHoverReactive = true;
+			t.Possition = glm::vec2(960.0f, 830.0f) + glm::vec2(-1920.0f, 0.0f);
+			t.Color = glm::vec3(0.80859375f, 0.80078125f, 0.81640625f);
+			t.Text = "TEST LEVEL";
+			t.Scale = 0.25f;
 
-		mButtonMap.emplace("TEST_LEVEL", b);
-		mTextToRender.push_back(t);
-		mTextToRender.back().ModelMatrix = &mButtonMap["TEST_LEVEL"].mModelMatrix;
+			mButtonMap.emplace("TEST_LEVEL", b);
+			mTextToRender.push_back(t);
+			mTextToRender.back().ModelMatrix = &mButtonMap["TEST_LEVEL"].mModelMatrix;
+		}
 	} {
 		Button b;
 		Text t;
@@ -639,6 +642,21 @@ void UIScenes::LoadPauseMenu(const int& tilesetOffset) {
 		Button b;
 		Text t;
 
+		b.CreateBoxButtonCentered(glm::ivec2(20, 3), glm::vec2(960.0f, 340.0f), 30, color, tilesetOffset);
+		b.mHoverReactive = true;
+		t.Possition = glm::vec2(960.0f, 340.0f);
+		t.Color = glm::vec3(0.80859375f, 0.80078125f, 0.81640625f);
+		t.Text = "Restart";
+		t.Scale = 0.25f;
+
+		mInGamePauseButtonMap.emplace("RESTART", b);
+
+		mInGamePauseTextToRender.push_back(t);
+		mInGamePauseTextToRender.back().ModelMatrix = &mInGamePauseButtonMap["RESTART"].mModelMatrix;
+	} {
+		Button b;
+		Text t;
+
 		b.CreateBoxButtonCentered(glm::ivec2(20, 3), glm::vec2(960.0f, 200.0f), 30, color, tilesetOffset);
 		b.mHoverReactive = true;
 		t.Possition = glm::vec2(960.0f, 200.0f);
@@ -721,22 +739,22 @@ void Button::CreateBoxButton(glm::ivec2 size, const glm::vec2& position, const i
 		std::uniform_int_distribution<> dist(0, 1);
 
 		std::vector<int> upperRow;
-		upperRow.push_back(1);
-		upperRow.push_back(2);
+		upperRow.push_back(5);
+		upperRow.push_back(6);
 		std::vector<int> lowerRow;
-		lowerRow.push_back(121);
-		lowerRow.push_back(122);
+		lowerRow.push_back(29);
+		lowerRow.push_back(30);
 		std::vector<int> leftColumn;
-		leftColumn.push_back(40);
-		leftColumn.push_back(80);
+		leftColumn.push_back(12);
+		leftColumn.push_back(20);
 		std::vector<int> rightColumn;
-		rightColumn.push_back(43);
-		rightColumn.push_back(83);
+		rightColumn.push_back(15);
+		rightColumn.push_back(23);
 
-		int UL_Corner = 0;
-		int UR_Corner = 3;
-		int LL_Corner = 120;
-		int LR_Corner = 123;
+		int UL_Corner = 4;
+		int UR_Corner = 7;
+		int LL_Corner = 28;
+		int LR_Corner = 31;
 
 		{
 			GameObject obj;
@@ -896,11 +914,10 @@ bool Button::CheckHoverStateChange() {
 	return result;
 }
 
-void Button::Render(BatchRenderer* renderer, const glm::mat4& projectionMatrix, const glm::mat4& mUIModelMatrix) {
+void Button::Render(BatchRenderer* renderer, const glm::mat4& projectionMatrix, const glm::mat4& mUIModelMatrix, GLuint textureArray) {
 
-	//mPosition = projectionMatrix * mModelMatrix * glm::vec4(mPosition.x, mPosition.y, 0.0f, 0.0f);
-	//
-	//mSize = projectionMatrix * mModelMatrix * glm::vec4(mSize.x, mSize.y, 0.0f, 0.0f);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);
 
 	if (!arrowButton) {
 		renderer->BeginBatch(projectionMatrix, &mUIModelMatrix);
@@ -914,15 +931,11 @@ void Button::Render(BatchRenderer* renderer, const glm::mat4& projectionMatrix, 
 	renderer->BeginBatch(projectionMatrix, &mModelMatrix);
 
 	for(int i = 0; i < mButtonBlocks.size(); i++) {
-		renderer->DrawInBatch(mButtonBlocks[i].mSprite.mVertexData.Position, mButtonBlocks[i].mSprite.mVertexData.Size, static_cast<uint32_t>(mButtonBlocks[i].mSprite.mVertexData.TextureIndex), glm::vec2(0.03125f, 0.03125f), glm::vec2(0.0f, 0.0f), 0.0f, 1.0f, false, mButtonBlocks[i].mSprite.mVertexData.Color);
+		renderer->DrawInBatch(mButtonBlocks[i].mSprite.mVertexData.Position, mButtonBlocks[i].mSprite.mVertexData.Size, static_cast<uint32_t>(mButtonBlocks[i].mSprite.mVertexData.TextureIndex), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 0.0f), 0.0f, 1.0f, false, mButtonBlocks[i].mSprite.mVertexData.Color);
 	}
-
-
 
 	renderer->EndBatch();
 	renderer->Flush();
-
-
 }
 
 void Button::Update(const glm::mat4& modelMatrix, Mix_Chunk* hoverSound, Mix_Chunk* clickSound) {
@@ -935,8 +948,6 @@ void Button::Update(const glm::mat4& modelMatrix, Mix_Chunk* hoverSound, Mix_Chu
 	else {
 		clickSoundOneShot = true;
 	}
-
-
 
 	if ((hoverState || mInteracting) && mHoverReactive) {
 		//need to change trigger size here

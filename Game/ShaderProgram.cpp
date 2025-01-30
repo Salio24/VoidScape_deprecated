@@ -1,5 +1,4 @@
 #include "ShaderProgram.hpp"
-#include "IO.hpp"
 
 ShaderProgram::ShaderProgram() {
 
@@ -91,12 +90,12 @@ bool ShaderProgram::CreateShaderProgram(const char* vertexPath, const char* frag
     if (CheckCompileErrors(ID, "PROGRAM") == false) {
         return false;
     }
-    // delete the shaders as they're linked into our program now and no longer necessary
+    
     glDeleteShader(vertex);
     glDeleteShader(fragment);
-    if (geometryPath != nullptr)
+    if (geometryPath != nullptr) {
         glDeleteShader(geometry);
-    // success
+    }
 	return true;
 }
 

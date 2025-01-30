@@ -10,6 +10,7 @@
 #include <glm/gtx/exterior_product.hpp>
 #include "AnimationHandler.hpp"
 #include <SDL3/SDL_mixer.h>
+#include "StateMachine.hpp"
 
 class BlackHole : public GameObject {
 public:
@@ -17,7 +18,7 @@ public:
 
 	~BlackHole();
 
-	void Update(std::vector<GameObject>* blocks, Actor& actor, const float& deltaTime, Animation& loopAnim, Animation& birthAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle, const float globalSFXVolumeModifier, bool test);
+	void Update(std::vector<GameObject>* blocks, Actor& actor, const float& deltaTime, Animation& loopAnim, Animation& birthAnim, Mix_Chunk* bornSound, Mix_Chunk* consumedSound, Mix_Chunk* blackHoleIdle, const float globalSFXVolumeModifier, DeathCause actorDeathCause);
 
 	void Reset();
 	 

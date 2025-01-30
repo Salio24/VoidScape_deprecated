@@ -63,6 +63,7 @@ private:
 	float FallVolumeTime{ 0.1f };
 	float FallVolumeTimer{ 0.0f };
 
+
 	bool deadAnimOneShot{ true };
 	bool deadAnimDone{ false };
 	int SuckedVolume{ 1 };

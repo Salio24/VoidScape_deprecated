@@ -39,8 +39,6 @@ public:
 
 	bool mIsDeathTrigger{ false };
 
-	//bool mIsConsumedByVoid{ false };
-
 	bool mConsumedByBlackHole{ false };
 
 	bool mIsCollidable{ false };

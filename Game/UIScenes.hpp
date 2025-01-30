@@ -54,7 +54,7 @@ public:
 
 	void ChangeColor(const glm::vec3& color);
 
-	void Render(BatchRenderer* renderer, const glm::mat4& projectionMatrix, const glm::mat4& mUIModelMatrix);
+	void Render(BatchRenderer* renderer, const glm::mat4& projectionMatrix, const glm::mat4& mUIModelMatrix, GLuint textureArray);
 
 	void Update(const glm::mat4& modelMatrix, Mix_Chunk* hoverSound, Mix_Chunk* clickSound);
 
@@ -116,7 +116,7 @@ public:
 
 	void LoadMainMenuControlsTab(const int& tilesetOffset);
 
-	void LoadMainMenuLevelsTab(const int& tilesetOffset);
+	void LoadMainMenuLevelsTab(const int& tilesetOffset, bool debugMode);
 
 	void LoadTitleScreen(const int& tilesetOffset);
 

@@ -90,23 +90,14 @@
     <ClCompile Include="Camera.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
-    <ClCompile Include="PipelineManager.cpp">
-      <Filter>Source Files\Render</Filter>
-    </ClCompile>
     <ClCompile Include="Sprite.cpp">
       <Filter>Source Files\Objects</Filter>
-    </ClCompile>
-    <ClCompile Include="IO.cpp">
-      <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="Input.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include="GameObject.cpp">
       <Filter>Source Files\Objects</Filter>
-    </ClCompile>
-    <ClCompile Include="GameLevel.cpp">
-      <Filter>Source Files\Level</Filter>
     </ClCompile>
     <ClCompile Include="Texture.cpp">
       <Filter>Source Files\Render</Filter>
@@ -122,9 +113,6 @@
     </ClCompile>
     <ClCompile Include="EscapePortal.cpp">
       <Filter>Source Files\Objects</Filter>
-    </ClCompile>
-    <ClCompile Include="SimpleTextOut.cpp">
-      <Filter>Source Files\Render</Filter>
     </ClCompile>
     <ClCompile Include="ShaderProgram.cpp">
       <Filter>Source Files\Render</Filter>
@@ -156,15 +144,18 @@
     <ClCompile Include="BackgroundRenderer.cpp">
       <Filter>Source Files\Render</Filter>
     </ClCompile>
+    <ClCompile Include="cont.cpp">
+      <Filter>Externals</Filter>
+    </ClCompile>
+    <ClCompile Include="JsonFileManager.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="HelperStructs.hpp">
-      <Filter>Header Files\Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="IO.hpp">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="Input.hpp">
@@ -182,17 +173,11 @@
     <ClInclude Include="Camera.hpp">
       <Filter>Header Files\Render</Filter>
     </ClInclude>
-    <ClInclude Include="PipelineManager.hpp">
-      <Filter>Header Files\Render</Filter>
-    </ClInclude>
     <ClInclude Include="GameEntity.hpp">
       <Filter>Header Files\Objects</Filter>
     </ClInclude>
     <ClInclude Include="GameObject.hpp">
       <Filter>Header Files\Objects</Filter>
-    </ClInclude>
-    <ClInclude Include="GameLevel.hpp">
-      <Filter>Header Files\Level</Filter>
     </ClInclude>
     <ClInclude Include="Sign.hpp">
       <Filter>Header Files\Utils</Filter>
@@ -211,9 +196,6 @@
     </ClInclude>
     <ClInclude Include="EscapePortal.hpp">
       <Filter>Header Files\Objects</Filter>
-    </ClInclude>
-    <ClInclude Include="SimpleTextOut.hpp">
-      <Filter>Header Files\Render</Filter>
     </ClInclude>
     <ClInclude Include="TextRenderer.hpp">
       <Filter>Header Files\Render</Filter>
@@ -244,6 +226,9 @@
     </ClInclude>
     <ClInclude Include="BackgroundRenderer.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="JsonFileManager.hpp">
+      <Filter>Header Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

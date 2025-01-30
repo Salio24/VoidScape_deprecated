@@ -22,11 +22,11 @@ public:
 	AnimationHandler(TextureHandler& textureHandlerRef);
 	~AnimationHandler();
 
-	void Init(const int& samplerSize);
+	void Init();
 
-	void InitMultiFrameAnimation(SDL_Surface* animationSpritesheet, Animation& animation, const glm::vec2& animationSize, const int& animationTime, const int& spriteSizeX, const int& spriteSizeY, const glm::vec2& texturePosition = glm::vec2(0.0f, 0.0f));
+	void InitMultiFrameAnimation(SDL_Surface* animationSpritesheet, Animation& animation, const glm::vec2& animationSize, const int& animationTime, const int& spriteResolution, const glm::vec2& texturePosition = glm::vec2(0.0f, 0.0f));
 
-	void InitSingleFrameAnimation(SDL_Surface* animationSprite, Animation& animation, const glm::vec2& animationSize, const int& spriteSizeX, const int& spriteSizeY, const glm::vec2& texturePosition = glm::vec2(0.0f, 0.0f));
+	void InitSingleFrameAnimation(SDL_Surface* animationSprite, Animation& animation, const glm::vec2& animationSize, const int& spriteResolution, const glm::vec2& texturePosition = glm::vec2(0.0f, 0.0f));
 
 	Animation DeadAnimation;
 	Animation DuckAnimation;
@@ -46,8 +46,5 @@ public:
 private:
 	TextureHandler&  textureHandlerRef;
 
-	int sampelrSize{ 0 };
-
-	const int animationSpriteSizeX{ 128 };
-	const int animationSpriteSizeY{ 128 };
+	const int animationSpriteResolution{ 128 };
 };

@@ -53,7 +53,7 @@ void BackgroundRenderer::Init() {
 void BackgroundRenderer::RenderMenuBackground(ShaderProgram* shader, GLuint& pipelineProgramID, const glm::mat4& model, const glm::mat4& projection) {
 	shader->UseInPipeline(pipelineProgramID);
 
-	glActiveTexture(GL_TEXTURE0);
+	//glActiveTexture(GL_TEXTURE0);
 
 	glBindVertexArray(VAO);
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -133,7 +133,7 @@ void BackgroundRenderer::LoadLevelBackground(ShaderProgram* shader, ShaderProgra
 	SDL_Surface* layer9Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0009_2.png"));
 	SDL_Surface* layer10Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0010_1.png"));
 	SDL_Surface* layer11Surface = textureHandler->FlipSurfaceVertically(textureHandler->LoadSurface("assets/UI/Background layers/Layer_0011_0.png"));
-	glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE30);
 
 	glGenTextures(1, &textureArray);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);
@@ -283,19 +283,6 @@ void BackgroundRenderer::LoadLevelBackground(ShaderProgram* shader, ShaderProgra
 	layer11.speed_modifier = 1.0f;
 	layer11.textureID = 11;
 
-	float speed_dividor = 0.7f;
-
-	//layer0.speed_modifier = 0.9f;
-	//layer1.speed_modifier		 = layer0.speed_modifier * speed_dividor;
-	//layer2.speed_modifier		 = layer1.speed_modifier * speed_dividor;
-	//layer3.speed_modifier		 = layer2.speed_modifier * speed_dividor;
-	//layer4_lights.speed_modifier = layer3.speed_modifier * speed_dividor;
-	//layer5.speed_modifier		 = layer4_lights.speed_modifier * speed_dividor;
-	//layer6.speed_modifier		 = layer5.speed_modifier * speed_dividor;
-	//layer7_lights.speed_modifier = layer6.speed_modifier * speed_dividor;
-	//layer8.speed_modifier		 = layer7_lights.speed_modifier * speed_dividor;
-	//layer9.speed_modifier		 = layer8.speed_modifier * speed_dividor;
-
 	layer0.speed_modifier = 0.35f;
 	layer1.speed_modifier = 0.40f;
 	layer2.speed_modifier = 0.45f;
@@ -314,8 +301,8 @@ void BackgroundRenderer::LoadLevelBackground(ShaderProgram* shader, ShaderProgra
 void BackgroundRenderer::RenderLevelBackground(ShaderProgram* shader, ShaderProgram* framebufferShader, GLuint& pipelineProgramID, const glm::mat4& projection, const float& blackHoleAABBx, glm::vec2 blackHoleCenterPos, const float& camPosx, bool gameStarted, const float& delta) {
 	shader->UseInPipeline(pipelineProgramID);
 
-	glActiveTexture(GL_TEXTURE1);
 	glBindVertexArray(VAO);
+	glActiveTexture(GL_TEXTURE30);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, textureArray);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
@@ -323,6 +310,7 @@ void BackgroundRenderer::RenderLevelBackground(ShaderProgram* shader, ShaderProg
 	shader->SetMat4("uModelMatrix", glm::mat4(1.0f));
 	shader->SetMat4("uProjectionMatrix", projection);
 	shader->SetInt("uLevelBackground", 1);
+	shader->SetInt("uTextureArray", 30);
 
 	std::vector<Box> all_vertecies;
 

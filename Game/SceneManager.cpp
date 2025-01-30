@@ -2,7 +2,7 @@
 #include "SceneManager.hpp" 
 
 SceneManager::SceneManager() {
-	mMainMenuLayoutPath = "assets/UI/Data/test40.json";
+
 }
 
 SceneManager::~SceneManager() {
@@ -35,9 +35,11 @@ void SceneManager::UpdateUIMenu(int tilesetOffset, float deltaTime, int& windowW
 		case MenuTabs::SETTINGS:
 			if (mUIScenes.mButtonMap["BACK"].GetPressState() || ((inputManager->mLastKey_Scancode == SDL_SCANCODE_ESCAPE) && inputManager->mLastkey_Relevant)) {
 				mUIScenes.mNextTabLoaded = false;
-				mUIScenes.mNextTab = MenuTabs::MAIN;
+				mUIScenes.mNextTab = MenuTabs::MAIN;	
 				mUIScenes.mMenuMoveDirection = MenuMoveDirection::LEFT;
 				mUIScenes.mActiveTab = MenuTabs::MAIN;
+
+				JsonManager::saveSettings(*settings);
 			}
 
 			if (mUIScenes.mButtonMap["WINDOW_MODE"].GetPressState()) {
@@ -109,7 +111,6 @@ void SceneManager::UpdateUIMenu(int tilesetOffset, float deltaTime, int& windowW
 
 
 					if (settings->currentResolutionIndex + 1 <= resolutions.size() - 1 && resolutions[settings->currentResolutionIndex + 1].y <= settings->screenSize.y) {
-						std::cout << "aaaa" << std::endl;
 						settings->currentResolutionIndex += 1;
 
 						backgroundRenderer->ResizeFramebuffer(resolutions[settings->currentResolutionIndex]);
@@ -171,8 +172,10 @@ void SceneManager::UpdateUIMenu(int tilesetOffset, float deltaTime, int& windowW
 			if (mUIScenes.mButtonMap["LEVEL_1"].GetPressState()) {
 				LoadLevel(Levels::LEVEL_1, tilesetOffset, audioHandler->IntroMusic);
 			}
-			if (mUIScenes.mButtonMap["TEST_LEVEL"].GetPressState()) {
-				LoadLevel(Levels::TEST_LEVEL, tilesetOffset, audioHandler->IntroMusic);
+			if (settings->debugMode) {
+				if (mUIScenes.mButtonMap["TEST_LEVEL"].GetPressState()) {
+					LoadLevel(Levels::TEST_LEVEL, tilesetOffset, audioHandler->IntroMusic);
+				}
 			}
 
 			break;
@@ -186,6 +189,7 @@ void SceneManager::UpdateUIMenu(int tilesetOffset, float deltaTime, int& windowW
 				mUIScenes.mNextTab = MenuTabs::SETTINGS;
 				mUIScenes.mMenuMoveDirection = MenuMoveDirection::LEFT;
 				mUIScenes.mActiveTab = MenuTabs::SETTINGS;
+				JsonManager::saveControls(inputManager->mControls);
 			}
 			if (mUIScenes.mButtonMap["LEFT_BIND"].GetPressState()) {
 				mUIScenes.mButtonMap["LEFT_BIND"].mInteracting = true;
@@ -250,60 +254,60 @@ void SceneManager::UpdateUIMenu(int tilesetOffset, float deltaTime, int& windowW
 			}
 			break;
 		case MenuTabs::LEVELS:
-			if (saveData->best_levelTime_minutesMap[Levels::LEVEL_1] == 0 && saveData->best_levelTime_secondsMap[Levels::LEVEL_1] == 0 && saveData->best_levelTime_centisecondsMap[Levels::LEVEL_1] == 0) {
+			if (saveData->Level_1_best_levelTime_minutes == 0 && saveData->Level_1_best_levelTime_seconds == 0 && saveData->Level_1_best_levelTime_centiseconds == 0) {
 				mUIScenes.mDynamicTextMap["tLEVEL_1"].Text = "Best Time: Not played";
 			}
 			else {
-				mUIScenes.mDynamicTextMap["tLEVEL_1"].Text = "Best Time: " + std::format("{}:{:02}:{:02}", saveData->best_levelTime_minutesMap[Levels::LEVEL_1], saveData->best_levelTime_secondsMap[Levels::LEVEL_1], saveData->best_levelTime_centisecondsMap[Levels::LEVEL_1]);
+				mUIScenes.mDynamicTextMap["tLEVEL_1"].Text = "Best Time: " + std::format("{}:{:02}:{:02}", saveData->Level_1_best_levelTime_minutes, saveData->Level_1_best_levelTime_seconds, saveData->Level_1_best_levelTime_centiseconds);
 			}
 			break;
 		case MenuTabs::CONTROLS:
 			if (mUIScenes.mButtonMap["LEFT_BIND"].mInteracting) {
 				if (inputManager->mLastkey_Relevant) {
-					inputManager->mMOVE_LEFT_Bind = inputManager->mLastKey_Scancode;
+					inputManager->mControls.LEFT_KEY_BIND = inputManager->mLastKey_Scancode;
 					mUIScenes.mButtonMap["LEFT_BIND"].mInteracting = false;
 				}
 				mUIScenes.mDynamicTextMap["tLEFT_BIND"].Text = "_";
 				mUIScenes.mDynamicTextMap["tLEFT_BIND"].Possition.y = 950.0f;
 			}
 			else {
-				mUIScenes.mDynamicTextMap["tLEFT_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(inputManager->mMOVE_LEFT_Bind, SDL_KMOD_NONE, false));
+				mUIScenes.mDynamicTextMap["tLEFT_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(inputManager->mControls.LEFT_KEY_BIND, SDL_KMOD_NONE, false));
 				mUIScenes.mDynamicTextMap["tLEFT_BIND"].Possition.y = 960.0f;
 			}
 			if (mUIScenes.mButtonMap["RIGHT_BIND"].mInteracting) {
 				if (inputManager->mLastkey_Relevant) {
-					inputManager->mMOVE_RIGHT_Bind = inputManager->mLastKey_Scancode;
+					inputManager->mControls.RIGHT_KEY_BIND = inputManager->mLastKey_Scancode;
 					mUIScenes.mButtonMap["RIGHT_BIND"].mInteracting = false;
 				}
 				mUIScenes.mDynamicTextMap["tRIGHT_BIND"].Text = "_";
 				mUIScenes.mDynamicTextMap["tRIGHT_BIND"].Possition.y = 850.0f;
 			}
 			else {
-				mUIScenes.mDynamicTextMap["tRIGHT_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(inputManager->mMOVE_RIGHT_Bind, SDL_KMOD_NONE, false));
+				mUIScenes.mDynamicTextMap["tRIGHT_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(inputManager->mControls.RIGHT_KEY_BIND, SDL_KMOD_NONE, false));
 				mUIScenes.mDynamicTextMap["tRIGHT_BIND"].Possition.y = 860.0f;
 			}
 			if (mUIScenes.mButtonMap["JUMP_BIND"].mInteracting) {
 				if (inputManager->mLastkey_Relevant) {
-					inputManager->mJUMP_Bind = inputManager->mLastKey_Scancode;
+					inputManager->mControls.JUMP_KEY_BIND = inputManager->mLastKey_Scancode;
 					mUIScenes.mButtonMap["JUMP_BIND"].mInteracting = false;
 				}
 				mUIScenes.mDynamicTextMap["tJUMP_BIND"].Text = "_";
 				mUIScenes.mDynamicTextMap["tJUMP_BIND"].Possition.y = 750.0f;
 			}
 			else {
-				mUIScenes.mDynamicTextMap["tJUMP_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(inputManager->mJUMP_Bind, SDL_KMOD_NONE, false));
+				mUIScenes.mDynamicTextMap["tJUMP_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(inputManager->mControls.JUMP_KEY_BIND, SDL_KMOD_NONE, false));
 				mUIScenes.mDynamicTextMap["tJUMP_BIND"].Possition.y = 760.0f;
 			}
 			if (mUIScenes.mButtonMap["DUCK_BIND"].mInteracting) {
 				if (inputManager->mLastkey_Relevant) {
-					inputManager->mDUCK_Bind = inputManager->mLastKey_Scancode;
+					inputManager->mControls.DUCK_KEY_BIND = inputManager->mLastKey_Scancode;
 					mUIScenes.mButtonMap["DUCK_BIND"].mInteracting = false;
 				}
 				mUIScenes.mDynamicTextMap["tDUCK_BIND"].Text = "_";
 				mUIScenes.mDynamicTextMap["tDUCK_BIND"].Possition.y = 650.0f;
 			}
 			else {
-				mUIScenes.mDynamicTextMap["tDUCK_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(inputManager->mDUCK_Bind, SDL_KMOD_NONE, false));
+				mUIScenes.mDynamicTextMap["tDUCK_BIND"].Text = SDL_GetKeyName(SDL_GetKeyFromScancode(inputManager->mControls.DUCK_KEY_BIND, SDL_KMOD_NONE, false));
 				mUIScenes.mDynamicTextMap["tDUCK_BIND"].Possition.y = 660.0f;
 			}
 			break;
@@ -311,7 +315,7 @@ void SceneManager::UpdateUIMenu(int tilesetOffset, float deltaTime, int& windowW
 	}
 }
 
-void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool actorDead, const bool actorEscaped, bool& pause, const bool gameStarted, const glm::mat4& projectionMatrix, const glm::mat4& UImodelMatrix, float deltaTime, DeathCause actorDeathCause, ShaderProgram* textShader, GLuint pipelineID, int fps) {
+void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool actorDead, const bool actorEscaped, bool& pause, const bool gameStarted, const glm::mat4& projectionMatrix, const glm::mat4& UImodelMatrix, float deltaTime, DeathCause actorDeathCause, ShaderProgram* textShader, GLuint pipelineID, int fps, GLuint arrayTexture) {
 
 	if (mLevelActive) {
 		if ((inputManager->mLastKey_Scancode == SDL_SCANCODE_ESCAPE) && inputManager->mLastkey_Relevant) {
@@ -353,7 +357,6 @@ void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool a
 	if (mLevelActive == true && mUIScenes.mTitleScreenActive == true) {
 
 		batchRenderer->BeginBatch(projectionMatrix, &UImodelMatrix);
-		//batchRenderer->DrawInBatch(glm::vec2(0.0f, 0.0f), glm::vec2(1920.0f, 1080.0f), glm::vec4((71.0f / 256.0f), (17.0f / 256.0f), (7.0f / 256.0f), titleScreenAlpha));
 		batchRenderer->DrawInBatch(glm::vec2(0.0f, 0.0f), glm::vec2(1920.0f, 1080.0f), glm::vec4(0.0f, 0.0f, 0.0f, titleScreenAlpha));
 		batchRenderer->EndBatch();
 		batchRenderer->Flush();
@@ -384,29 +387,34 @@ void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool a
 			}
 
 			for (const auto& pair : mUIScenes.mInGameTitleButtonMap) {
-				mUIScenes.mInGameTitleButtonMap[pair.first].Render(batchRenderer, projectionMatrix, UImodelMatrix);
+				mUIScenes.mInGameTitleButtonMap[pair.first].Render(batchRenderer, projectionMatrix, UImodelMatrix, arrayTexture);
 			}
 
 			if (!actorEscaped) {
-				std::string deathMessageText;
-				glm::vec4 deathMessageColor = glm::vec4(1.0f);
 
-				switch (actorDeathCause) {
-				case DeathCause::LAVA:
-					deathMessageText = "Tried to swim in lava";
-					deathMessageColor = glm::vec4(1.0f, 0.42578125f, 0.12109375f, 1.0f);
-					break;
-				case DeathCause::FELL_DOWN:
-					deathMessageText = "Fell out of the world";
-					deathMessageColor = glm::vec4(0.0f, 0.7265625f, 1.0f, 1.0f);
-					break;
-				case DeathCause::BLACK_HOLE:
-					deathMessageText = "Consumed by the void";
-					deathMessageColor = glm::vec4(0.0f, 0.7265625f, 1.0f, 1.0f);
-					break;
-				default:
-					deathMessageText = "Skill issue, git gud lol";
-					break;
+				if (deathMessageOneShot) {
+					deathMessageText;
+					deathMessageColor = glm::vec4(1.0f);
+
+					switch (actorDeathCause) {
+					case DeathCause::LAVA:
+						deathMessageText = "Tried to swim in lava";
+						deathMessageColor = glm::vec4(1.0f, 0.42578125f, 0.12109375f, 1.0f);
+						break;
+					case DeathCause::FELL_DOWN:
+						deathMessageText = "Fell out of the world";
+						deathMessageColor = glm::vec4(0.0f, 0.7265625f, 1.0f, 1.0f);
+						break;
+					case DeathCause::BLACK_HOLE:
+						deathMessageText = "Consumed by the void";
+						deathMessageColor = glm::vec4(0.0f, 0.7265625f, 1.0f, 1.0f);
+						break;
+					default:
+						deathMessageText = "Unknown death cause";
+						break;
+					}
+
+					deathMessageOneShot = false;
 				}
 
 				mUIScenes.mInGameTitleDynamicTextMap["tTITLE"].Text = "Game Over";
@@ -424,10 +432,11 @@ void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool a
 				mUIScenes.mInGameTitleDynamicTextMap["tRETRY"].Text = "Retry";
 			}
 			else {
-				if (((levelTime_minutes * 6000 + levelTime_seconds * 100 + levelTime_centiseconds) < (saveData->best_levelTime_minutesMap[mCurrentLevel] * 6000 + saveData->best_levelTime_secondsMap[mCurrentLevel] * 100 + saveData->best_levelTime_centisecondsMap[mCurrentLevel])) || (saveData->best_levelTime_minutesMap[mCurrentLevel] == 0 && saveData->best_levelTime_secondsMap[mCurrentLevel] == 0 && saveData->best_levelTime_centisecondsMap[mCurrentLevel] == 0)) {
-					saveData->best_levelTime_minutesMap[mCurrentLevel] = levelTime_minutes;
-					saveData->best_levelTime_secondsMap[mCurrentLevel] = levelTime_seconds;
-					saveData->best_levelTime_centisecondsMap[mCurrentLevel] = levelTime_centiseconds;
+				if (((levelTime_minutes * 6000 + levelTime_seconds * 100 + levelTime_centiseconds) < (saveData->Level_1_best_levelTime_minutes * 6000 + saveData->Level_1_best_levelTime_seconds * 100 + saveData->Level_1_best_levelTime_centiseconds)) || (saveData->Level_1_best_levelTime_minutes == 0 && saveData->Level_1_best_levelTime_seconds == 0 && saveData->Level_1_best_levelTime_centiseconds == 0)) {
+					saveData->Level_1_best_levelTime_minutes = levelTime_minutes;
+					saveData->Level_1_best_levelTime_seconds = levelTime_seconds;
+					saveData->Level_1_best_levelTime_centiseconds = levelTime_centiseconds;
+					JsonManager::saveSaveData(*saveData);
 					mNewBestTimeMessageOneShot = true;
 				}
 
@@ -438,7 +447,7 @@ void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool a
 
 				mUIScenes.mInGameTitleDynamicTextMap["tTIME"].Text = "Time: " + std::format("{}:{:02}:{:02}", levelTime_minutes, levelTime_seconds, levelTime_centiseconds);
 
-				mUIScenes.mInGameTitleDynamicTextMap["tBEST_TIME"].Text = "Best Time: " + std::format("{}:{:02}:{:02}", saveData->best_levelTime_minutesMap[mCurrentLevel], saveData->best_levelTime_secondsMap[mCurrentLevel], saveData->best_levelTime_centisecondsMap[mCurrentLevel]);
+				mUIScenes.mInGameTitleDynamicTextMap["tBEST_TIME"].Text = "Best Time: " + std::format("{}:{:02}:{:02}", saveData->Level_1_best_levelTime_minutes, saveData->Level_1_best_levelTime_seconds, saveData->Level_1_best_levelTime_centiseconds);
 
 				if (mNewBestTimeMessageOneShot) {
 					mUIScenes.mInGameTitleDynamicTextMap["tNEW_BEST_TIME"].Text = "New Best Time!";
@@ -452,7 +461,6 @@ void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool a
 
 			}
 			if (mUIScenes.mInGameTitleButtonMap["RETRY"].GetPressState()) {
-				std::cout << "aa" << std::endl;
 				restart = true;
 				restartMode = false;
 			}
@@ -463,6 +471,7 @@ void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool a
 				else if (!settings->autoRestart) {
 					settings->autoRestart = true;
 				}
+				JsonManager::saveSettings(*settings);
 			}
 			if (mUIScenes.mInGameTitleButtonMap["BACK_TO_MENU"].GetPressState()) {
 				restart = true;
@@ -513,7 +522,7 @@ void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool a
 		batchRenderer->Flush();
 
 		for (const auto& pair : mUIScenes.mInGamePauseButtonMap) {
-			mUIScenes.mInGamePauseButtonMap[pair.first].Render(batchRenderer, projectionMatrix, UImodelMatrix);
+			mUIScenes.mInGamePauseButtonMap[pair.first].Render(batchRenderer, projectionMatrix, UImodelMatrix, arrayTexture);
 		}
 		if (mUIScenes.mInGamePauseButtonMap["CONTINUE"].GetPressState()) {
 			pause = false;
@@ -546,6 +555,12 @@ void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool a
 			else if (!settings->autoRestart) {
 				settings->autoRestart = true;
 			}
+			JsonManager::saveSettings(*settings);
+		}
+		if (mUIScenes.mInGamePauseButtonMap["RESTART"].GetPressState()) {
+			pause = false;
+			restart = true;
+			restartMode = false;
 		}
 		if (mUIScenes.mInGamePauseButtonMap["BACK_TO_MENU"].GetPressState()) {
 			pause = false;
@@ -582,14 +597,12 @@ void SceneManager::UpdateUIInGame(bool& restart, bool& restartMode, const bool a
 
 			levelTime_centiseconds = (levelTime % 1000) / 10;
 		}
-		textRenderer->RenderText(textShader, pipelineID, "FPS: " + std::to_string(fps), 80.0f, 1000.0f, 0.20f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), projectionMatrix, UImodelMatrix, false, false, false);
+		if (settings->showFpsInGame) {
+			textRenderer->RenderText(textShader, pipelineID, "FPS: " + std::to_string(fps), 80.0f, 1000.0f, 0.20f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), projectionMatrix, UImodelMatrix, false, false, false);
+		}
 
 		textRenderer->RenderText(textShader, pipelineID, std::format("{}:{:02}:{:02}", levelTime_minutes, levelTime_seconds, levelTime_centiseconds), 1840.0f, 1000.0f, 0.35f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), projectionMatrix, UImodelMatrix, false, false, true);
 	}
-}
-
-void SceneManager::ResetState() {
-
 }
 
 void SceneManager::ResetTimer() {
@@ -612,9 +625,6 @@ void SceneManager::StartLevelTimer() {
 	levelTimerTotal = std::chrono::high_resolution_clock::now();
 }
 
-// move gamelevel to here. rename to scenes*. combine LoadMenuLayout and LoadMainMenu.
-// can obstract even further and separate with (UI scene(s) and game scene(s)) classes.
-
 void SceneManager::Init(InputManager* INinputManager, BackgroundRenderer* INbackgroundRenderer, AudioHandler* INaudioHandler, Settings* INsettings, SaveData* INsaveData, BatchRenderer* INbatchRenderer, TextRenderer* INtextRenderer) {
 	saveData = INsaveData;
 	settings = INsettings;
@@ -623,36 +633,6 @@ void SceneManager::Init(InputManager* INinputManager, BackgroundRenderer* INback
 	textRenderer = INtextRenderer;
 	batchRenderer = INbatchRenderer;
 	backgroundRenderer = INbackgroundRenderer;
-}
-
-void SceneManager::LoadGameLevel(std::string levelPath, GameLevel* level, const int& tilesetOffset) {
-	//level->mBlocks.clear();
-	//level->LoadLevelJson(levelPath);
-	//level->BuildLevel(tilesetOffset);
-	//for (int i = 0; i < level->mBlocks.size(); i++) {
-	//	level->mBlocks[i].Update();
-	//}
-	//mLevelActive = true;
-}
-
-void SceneManager::LoadMenuLayout(std::string layoutPath) {
-	std::ifstream jsonStream(layoutPath);
-
-	nlohmann::json GameLevelDataJson = nlohmann::json::parse(jsonStream);
-
-	levelWidth = GameLevelDataJson["width"];
-	levelHeight = GameLevelDataJson["height"];
-	
-	
-	std::vector<std::vector<int>> data(levelHeight, std::vector<int>(levelWidth));
-	std::vector vec = GameLevelDataJson["layers"][0]["data"].get<std::vector<int>>();
-	for (int j = 0; j < levelHeight; j++) {
-		for (int k = 0; k < levelWidth; k++) {
-			data[j][k] = vec[j * levelWidth + k];
-		}
-	}
-	offset = GameLevelDataJson["tilesets"][0]["firstgid"];
-	layoutData.push_back(data);
 }
 
 void SceneManager::LoadMainMenu(const int& tilesetOffset) {
@@ -665,29 +645,6 @@ void SceneManager::LoadMainMenu(const int& tilesetOffset) {
 	mMainMenuActive = true;
 }
 
-void SceneManager::LoadTitleScreen() {
-
-}
-
-void SceneManager::SceneChangeAnim(const float& deltaTime) {
-	mChangingScene = true;
-
-	if (!mCurtainDirection) {
-		mCurtainSize.x += 5000.0f * deltaTime;
-		if (mCurtainSize.x >= 1920.0f) {
-			mCurtainSize.x = 1920.0f;
-			mCurtainDirection = true;
-		}
-	}
-	else {
-		mCurtainSize.x -= 5000.0f * deltaTime;
-		if (mCurtainSize.x <= 0.0f) {
-			mCurtainSize.x = 0.0f;
-			mCurtainDirection = false;
-			mChangingScene = false;
-		}
-	}
-}
 
 void SceneManager::ReloadCurrentLevel(const int tilesetOffset, Mix_Music* introMusic) {
 	switch (mCurrentLevel) {
@@ -709,6 +666,7 @@ void SceneManager::ReloadCurrentLevel(const int tilesetOffset, Mix_Music* introM
 		std::cerr << "Error: ReloadCurrentLevel: Invalid current level" << std::endl;
 		break;
 	}
+	deathMessageOneShot = true;
 	Mix_HaltMusic();
 	Mix_PlayMusic(introMusic, 0);
 }

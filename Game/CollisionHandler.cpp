@@ -102,7 +102,7 @@ bool DynamicRectVsRect(const Box& dynamicBox, const float deltaTime, const Box& 
 	}
 }
 
-bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box& staticBox, glm::vec2& dynamicBoxVelocity, Actor& actor, glm::vec2& averagedNormal, bool& NormalGroundCheck, bool& isWallMountableL, bool& isWallMountableR, glm::vec2& norm)
+bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box& staticBox, glm::vec2& dynamicBoxVelocity, Actor& actor, glm::vec2& averagedNormal, bool& NormalGroundCheck, bool& isWallMountableL, bool& isWallMountableR, float& Ynormal)
 {
 
 	glm::vec2 contactPoint, contactNormal;
@@ -141,7 +141,7 @@ bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box&
 		
 		}
 
-		norm = contactNormal;
+		Ynormal = contactNormal.y;
 
 		return true;
 	}
@@ -157,9 +157,6 @@ void CollisionUpdate(const std::vector<GameObject>* blocks, Actor& actor, bool& 
 	glm::vec2 contactPoint, contactNormal;
 
 	glm::vec2 contactPoint2, contactNormal2;
-
-
-	contactNormal.y = 125;
 
 	float contactTime = 0;
 
@@ -219,32 +216,21 @@ void CollisionUpdate(const std::vector<GameObject>* blocks, Actor& actor, bool& 
 		return a.second < b.second;
 		});
 
-	glm::vec2 norm;
 
-	norm.y = 2;
-
+	float yNorm = 2;
 
 	for (auto j : colidedBlocks) {
-		ResolveDynamicRectVsRect(actor.mSprite.mVertexData, deltaTime, blocks->at(j.first).mSprite.mVertexData, actor.mVelocity, actor, averagedNormal, NormalGroundCheck, isWallMountableL, isWallMountableR, norm);
+		ResolveDynamicRectVsRect(actor.mSprite.mVertexData, deltaTime, blocks->at(j.first).mSprite.mVertexData, actor.mVelocity, actor, averagedNormal, NormalGroundCheck, isWallMountableL, isWallMountableR, yNorm);
 	}
 
-	if (norm.y == 1) {
-		//std::cout << "Grounded" << std::endl;
+	if (yNorm == 1) {
 		isGrounded = true;
 	}
 	else {
-		//std::cout << "Grounded not" << std::endl;
 		isGrounded = false;
 	}
 
-	//std::cout << glm::to_string(norm) << std::endl;
 
-	//if (BottomWallHug && NormalGroundCheck && actor.mVelocity.y == 0.0f) {
-	//	isGrounded = true;
-	//}
-	//else {
-	//	isGrounded = false;
-	//}
 	actor.mPosition += actor.mVelocity * deltaTime;
 
 

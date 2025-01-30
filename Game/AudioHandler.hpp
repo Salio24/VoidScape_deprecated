@@ -39,7 +39,7 @@ public:
 	Mix_Chunk* DoubleJumpRecharge = NULL;
 
 	std::array<Mix_Chunk*, 10> RunSounds;
-	std::array<Mix_Chunk*, 5> LandSoftSounds;
+	std::array<Mix_Chunk*, 1> LandSoftSounds;
 	std::array<Mix_Chunk*, 1> LandHardSounds;
 
 	Mix_Music* IntroMusic = NULL;

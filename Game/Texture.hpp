@@ -7,7 +7,17 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <vector>
+#include <list>
+#include <unordered_map>
 
+
+struct TilesetLocations {
+	std::pair<int, int> mBaseTileset;
+	std::pair<int, int> mUIBorderTileset;
+	std::pair<int, int> mUIArrowsTileset;
+	std::pair<int, int> mDoubejumpOrbTileset;
+
+};
 
 class TextureHandler {
 public:
@@ -17,15 +27,15 @@ public:
 
 	SDL_Surface* LoadSurface(const char* filepath);
 
-	void InitTextureArray(const GLenum& internalformat, const GLsizei& width, const GLsizei& height, const GLsizei& depth);
+	void InitTextureArray(const GLenum internalformat, const GLsizei resolution, const GLsizei depth);
 
-	void LoadTexture(SDL_Surface* surface, const GLenum& internalformat, const int& layer, const int& slot);
+	void LoadTexture(SDL_Surface* surface, const GLenum& internalformat, int& layer);
 
 	SDL_Surface* FlipSurfaceVertically(SDL_Surface* surface);
 
-	void CutAndLoad(const char* filepath, int& offsetValue, const int& arrayIndex, const int& resolution);
+	void CutAndLoad(const char* filepath, std::pair<int, int>& tilesetLocation, const int& resolution);
 
-	void LoadAll(const int& arrayIndex = 1);
+	void LoadAll();
 
 	std::vector<SDL_Surface*> CutTileset(SDL_Surface* tileset, const int& tileWidth, const int& tileHeight);
 
@@ -41,9 +51,9 @@ public:
 	// offset of Orb tileset textures
 	int mOrbT_Offset{ 0 };
 
+	TilesetLocations mTilesetLocations;
+	std::unordered_map<int, std::pair<GLuint, int>> mTextureArrays;
 
 private:
-	std::array<GLuint, 32> textureArrays;
 
-	int TextureSlotsTaken = 0;
 };

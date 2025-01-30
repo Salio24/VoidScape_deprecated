@@ -17,24 +17,24 @@ SDL_Surface* TextureHandler::LoadSurface(const char* filepath) {
 	return surface;
 }
 
-void TextureHandler::InitTextureArray(const GLenum& internalformat, const GLsizei& width, const GLsizei& height, const GLsizei& depth) {
-	glGenTextures(1, &textureArrays[TextureSlotsTaken]);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, textureArrays[TextureSlotsTaken]);
+void TextureHandler::InitTextureArray(const GLenum internalformat, const GLsizei resolution, const GLsizei depth) {
+    mTextureArrays.emplace(resolution, std::make_pair(0, 0));
 
-	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, internalformat, width, height, depth);
+	glGenTextures(1, &mTextureArrays[resolution].first);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureArrays[resolution].first);
+
+	glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, internalformat, resolution, resolution, depth);
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    mLayersUsed[TextureSlotsTaken] = 0;
-	TextureSlotsTaken++;
 }
 
-void TextureHandler::LoadTexture(SDL_Surface* surface, const GLenum& internalformat, const int& layer, const int& slot) {
+void TextureHandler::LoadTexture(SDL_Surface* surface, const GLenum& internalformat, int& layer) {
 	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, layer, surface->w, surface->h, 1, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
     SDL_DestroySurface(surface);
-    mLayersUsed[slot]++;
+    layer++;
 }
 
 std::vector<SDL_Surface*> TextureHandler::CutTileset(SDL_Surface* tileset, const int& tileWidth, const int& tileHeight) {
@@ -95,22 +95,29 @@ SDL_Surface* TextureHandler::FlipSurfaceVertically(SDL_Surface* surface) {
     return flipped;
 }
 
-void TextureHandler::CutAndLoad(const char* filepath, int& offsetValue, const int& arrayIndex, const int& resolution) {
+void TextureHandler::CutAndLoad(const char* filepath, std::pair<int, int>& tilesetLocation, const int& resolution) {
     SDL_Surface* tilesetSurface = LoadSurface(filepath);
     std::vector<SDL_Surface*> cutTileset = CutTileset(tilesetSurface, resolution, resolution);
     SDL_DestroySurface(tilesetSurface);
-    offsetValue = mLayersUsed[arrayIndex];
+    if (mTextureArrays.find(resolution) != mTextureArrays.end()) {
+        tilesetLocation.first = resolution;
+    }
+    else {
+        std::cerr << "ERROR: CutAndLoad no texture array found for resolution: " << resolution << std::endl;
+    }
+    tilesetLocation.second = mTextureArrays[resolution].second;
+	glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureArrays[resolution].first);
     for (int i = 0; i < cutTileset.size(); i++) {
-        LoadTexture(cutTileset[i], GL_RGBA, mLayersUsed[arrayIndex], 0);
+        LoadTexture(cutTileset[i], GL_RGBA, mTextureArrays[resolution].second);
     }
 }
 
-void TextureHandler::LoadAll(const int& arrayIndex) {
-    CutAndLoad((const char*)"assets/Level/tiles128upA.png", mBaseT_Offset, arrayIndex, 128);
+void TextureHandler::LoadAll() {
+    CutAndLoad((const char*)"assets/Level/tiles128upA.png", mTilesetLocations.mBaseTileset, 128);
     //CutAndLoad((const char*)"assets/UI/test.png", mUI_BordersT_Offset, arrayIndex, 16);
-	CutAndLoad((const char*)"assets/UI/Border All 2_Alpha.png", mUI_BordersT_Offset, arrayIndex, 16);
+	CutAndLoad((const char*)"assets/UI/Borders32p.png", mTilesetLocations.mUIBorderTileset, 32);
 
-    CutAndLoad((const char*)"assets/UI/Arrows.png", mUI_ArrowsT_Offset, arrayIndex, 16);
+    CutAndLoad((const char*)"assets/UI/Arrows32p.png", mTilesetLocations.mUIArrowsTileset, 32);
 
-    CutAndLoad((const char*)"assets/Actor/Orb128_2.png", mOrbT_Offset, arrayIndex, 128);
+    CutAndLoad((const char*)"assets/Actor/Orb128_2.png", mTilesetLocations.mDoubejumpOrbTileset, 128);
 }

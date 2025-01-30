@@ -1,16 +1,4 @@
 #include "App.hpp"
-#include "glm/gtx/string_cast.hpp"
-#include <cmath>
-#include <algorithm>
-#include "Sign.hpp"
-#include <SDL3/SDL_image.h>
-#include <SDL3/SDL_mixer.h>
-#include <glm/gtx/norm.hpp>
-#include <random>
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/gtx/exterior_product.hpp>
-#include <cmath>
-#include <numbers>
 
 App::App() : mAnimationHandler(mTextureHandler) {
 	StartUp();
@@ -62,9 +50,12 @@ void App::StartUp() {
 	mWindowModes.push_back("windowed");
 	mWindowModes.push_back("fullscreen");
 
-	mSaveData.best_levelTime_minutesMap.emplace(Levels::LEVEL_1, mSaveData.Level_1_best_levelTime_minutes);
-	mSaveData.best_levelTime_secondsMap.emplace(Levels::LEVEL_1, mSaveData.Level_1_best_levelTime_seconds);
-	mSaveData.best_levelTime_centisecondsMap.emplace(Levels::LEVEL_1, mSaveData.Level_1_best_levelTime_centiseconds);
+	mSettings = JsonManager::loadSettings();
+	mSaveData = JsonManager::loadSaveData();
+	mInputManager.mControls = JsonManager::loadControls();
+
+	mSettings.screenSize.x = bounds.w;
+	mSettings.screenSize.y = bounds.h;
 
 	if (IMG_Init(IMG_INIT_PNG) == 0) {
 		std::cerr << "SDL3_image could not be initialized" << std::endl;
@@ -117,17 +108,63 @@ void App::StartUp() {
 		glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_ERROR, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 	}
 
-	std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
-	std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
-	std::cout << "GL Version: " << glGetString(GL_VERSION) << std::endl;
-	std::cout << "Shading Language Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+	if (mWindowModes[mSettings.currentWindowModeIndex] == "windowed") {
+		SDL_SetWindowSize(mWindow, mResolutions[mSettings.currentResolutionIndex].x, mResolutions[mSettings.currentResolutionIndex].y);
+		mWindowWidth = mResolutions[mSettings.currentResolutionIndex].x;
+		mWindowHeight = mResolutions[mSettings.currentResolutionIndex].y;
+
+		mSettings.viewportOffset.x = 0;
+		mSettings.viewportOffset.y = 0;
+
+		glViewport(0, 0, mWindowWidth, mWindowHeight);
+		SDL_SetWindowFullscreen(mWindow, false);
+	}
+	else if (mWindowModes[mSettings.currentWindowModeIndex] == "fullscreen") {
+		SDL_SetWindowFullscreen(mWindow, true);
+
+		int Width;
+		int Height;
+
+		SDL_GetWindowSize(mWindow, &Width, &Height);
+
+		glm::ivec2 resTemp = glm::ivec2(Width, Height);
+
+		int i = 0;
+		for (; mResolutions[i].y != mSettings.screenSize.y; i++) {
+
+		}
+
+		SDL_SetWindowSize(mWindow, resTemp.x, resTemp.y);
+		mWindowWidth = resTemp.x;
+		mWindowHeight = resTemp.y;
+
+		mSettings.viewportOffset.x = (mSettings.screenSize.x - mWindowWidth) / 2;
+		mSettings.viewportOffset.y = (mSettings.screenSize.y - mWindowHeight) / 2;
+
+		glViewport(mSettings.viewportOffset.x, mSettings.viewportOffset.y, mWindowWidth, mWindowHeight);
+
+	}
+	if (mSettings.debugMode) {
+		std::cout << "Vendor: " << glGetString(GL_VENDOR) << std::endl;
+		std::cout << "Renderer: " << glGetString(GL_RENDERER) << std::endl;
+		std::cout << "GL Version: " << glGetString(GL_VERSION) << std::endl;
+		std::cout << "Shading Language Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
+
+		if (__cplusplus == 202002L) std::cout << "C++20\n";
+		else if (__cplusplus == 201703L) std::cout << "C++17\n";
+		else if (__cplusplus == 201402L) std::cout << "C++14\n";
+		else if (__cplusplus == 201103L) std::cout << "C++11\n";
+		else if (__cplusplus == 199711L) std::cout << "C++98\n";
+		else std::cout << "Unknown C++ standard\n";
+	}
 }
 
 void App::PostStartUp() {
+
 	mCamera.SetProjectionMatrix(1920.0f);
 
-	mGeneralShaderProgram.CreateShaderProgram("shaders/vertexGeneral.glsl", "shaders/fragmentGeneral.glsl");
 	mTextShaderProgram.CreateShaderProgram("shaders/vertexText.glsl", "shaders/fragmentText.glsl");
+	mGeneralShaderProgram.CreateShaderProgram("shaders/vertexGeneral.glsl", "shaders/fragmentGeneral.glsl");
 	mBackgroundShaderProgram.CreateShaderProgram("shaders/vertexBackground.glsl", "shaders/fragmentBackground.glsl");
 	mBackgroundFramebufferShaderProgram.CreateShaderProgram("shaders/vertexBackgroundFramebuffer.glsl", "shaders/fragmentBackgroundFramebuffer.glsl");
 
@@ -138,50 +175,64 @@ void App::PostStartUp() {
 	mPipelineProgram.BindShaderProgram(mGeneralShaderProgram.ID);
 
 	mBatchRenderer.StartUp(&mGeneralShaderProgram, mPipelineProgram.ID);
-
-	//SDL_Surface* tileset = mTextureHandler.LoadSurface("assets/Level/tiles128up.png");
 	
-	mTextureHandler.InitTextureArray(GL_RGBA8, 512, 512, 2000);
+	mTextureHandler.InitTextureArray(GL_RGBA8, 16, 16);
+	mTextureHandler.InitTextureArray(GL_RGBA8, 32, 748);
+	mTextureHandler.InitTextureArray(GL_RGBA8, 128, 600);
+	mTextureHandler.InitTextureArray(GL_RGBA8, 512, 32);
 
-	uint32_t whiteTextureData[128 * 128];
-	for (int i = 0; i < 128 * 128; i++) {
+
+	uint32_t whiteTextureData[16 * 16];
+	for (int i = 0; i < 16 * 16; i++) {
 		whiteTextureData[i] = 0xFFFFFFFF; // RGBA: White
 	}
-	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 128, 128, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
-	mTextureHandler.mLayersUsed[0]++;
 
-	//std::vector<SDL_Surface*> tiles = mTextureHandler.CutTileset(tileset, 128, 128);
-	//for (int i = 0; i < tiles.size(); i++) {
-	//	mTextureHandler.LoadTexture(tiles[i], GL_RGBA, mTextureHandler.mLayersUsed[0], 0);
-	//}
+	glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[16].first);
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
+	mTextureHandler.mTextureArrays[16].second++;
 
-	mAnimationHandler.Init(512);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[32].first);
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
+	mTextureHandler.mTextureArrays[32].second++;
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[128].first);
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
+	mTextureHandler.mTextureArrays[128].second++;
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[512].first);
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, 16, 16, 1, GL_RGBA, GL_UNSIGNED_BYTE, whiteTextureData);
+	mTextureHandler.mTextureArrays[512].second++;
+
+	mAnimationHandler.Init();
 
 	Mix_AllocateChannels(20);
 	mAudioHandler.LoadSounds();
 	mEscapePortal.mSprite.mVertexData.Size = mAnimationHandler.EscapePortalAnimation.Size * mEscapePortal.mSizeMultiplier;
+	if (mSettings.debugMode) {
+		int maxCombinedUnits, maxFragmentUnits, maxVertexUnits, maxArrayLayers;
 
-	int maxCombinedUnits, maxFragmentUnits, maxVertexUnits, maxArrayLayers;
+		glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxCombinedUnits);
+		glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxFragmentUnits);
+		glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &maxVertexUnits);
+		glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxArrayLayers);
 
-	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &maxCombinedUnits);
-	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxFragmentUnits);
-	glGetIntegerv(GL_MAX_VERTEX_TEXTURE_IMAGE_UNITS, &maxVertexUnits);
-	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &maxArrayLayers);
+		printf("Max Combined Texture Units: %d\n", maxCombinedUnits);
+		printf("Max Fragment Texture Units: %d\n", maxFragmentUnits);
+		printf("Max Vertex Texture Units: %d\n", maxVertexUnits);
+		printf("Max Array Texture Layers: %d\n", maxArrayLayers);
+	}
 
-	printf("Max Combined Texture Units: %d\n", maxCombinedUnits);
-	printf("Max Fragment Texture Units: %d\n", maxFragmentUnits);
-	printf("Max Vertex Texture Units: %d\n", maxVertexUnits);
-	printf("Max Array Texture Layers: %d\n", maxArrayLayers);
+	mTextureHandler.LoadAll();
 
-	mTextureHandler.LoadAll(0);
-
-	mSceneManager.mUIScenes.LoadMainMenuBackground("assets/UI/Data/Layout/40p.json", mTextureHandler.mUI_BordersT_Offset);
+	mSceneManager.mUIScenes.LoadMainMenuBackground("assets/UI/Data/Layout/MenuBorders.json", mTextureHandler.mTilesetLocations.mUIBorderTileset.second);
 
 	mBackgroundRenderer.Init();
 
 	mBackgroundRenderer.LoadMenuBackground("assets/UI/background4k.png", &mBackgroundShaderProgram, mPipelineProgram.ID, &mTextureHandler);
 
 	mBackgroundRenderer.LoadLevelBackground(&mBackgroundShaderProgram, &mBackgroundFramebufferShaderProgram, mPipelineProgram.ID, &mTextureHandler);
+
+	mBackgroundRenderer.ResizeFramebuffer(glm::ivec2(mWindowWidth, mWindowHeight));
 
 	mAudioHandler.SetGlobalSFXVolume(mSettings.SFXVolume);
 	mAudioHandler.SetGlobalMusicVolume(mSettings.MusicVolume);
@@ -193,7 +244,6 @@ void App::LoadGame(const bool retry) {
 	mBlackHole.Reset();
 	mStateMachine.Reset();
 	mActor.Reset(mAnimationHandler.FallAnimation.Size, glm::vec2(400.0f, 350.0f));
-	//mActor.Reset(mAnimationHandler.FallAnimation.Size, glm::vec2(17700.0f, 350.0f));
 	mSceneManager.mUIScenes.mTitleScreenActive = false;
 	// reset movement handler
 	mMovementHandler.mLookDirection = LookDirections::RIGHT;
@@ -236,17 +286,17 @@ void App::LoadGame(const bool retry) {
 			mSceneManager.mUIScenes.TranslateMenuInstant(glm::vec2(-1920.0f, 0.0f));
 		}
 
-		mSceneManager.mUIScenes.LoadMainMenuSettingsTab(mTextureHandler.mUI_BordersT_Offset, mTextureHandler.mUI_ArrowsT_Offset);
-		mSceneManager.mUIScenes.LoadMainMenuLevelsTab(mTextureHandler.mUI_BordersT_Offset);
-		mSceneManager.mUIScenes.LoadTitleScreen(mTextureHandler.mUI_BordersT_Offset);
-		mSceneManager.mUIScenes.LoadMainMenuControlsTab(mTextureHandler.mUI_BordersT_Offset);
-		mSceneManager.LoadMainMenu(mTextureHandler.mUI_BordersT_Offset);
+		mSceneManager.mUIScenes.LoadMainMenuSettingsTab(mTextureHandler.mTilesetLocations.mUIBorderTileset.second, mTextureHandler.mTilesetLocations.mUIArrowsTileset.second);
+		mSceneManager.mUIScenes.LoadMainMenuLevelsTab(mTextureHandler.mTilesetLocations.mUIBorderTileset.second, mSettings.debugMode);
+		mSceneManager.mUIScenes.LoadTitleScreen(mTextureHandler.mTilesetLocations.mUIBorderTileset.second);
+		mSceneManager.mUIScenes.LoadMainMenuControlsTab(mTextureHandler.mTilesetLocations.mUIBorderTileset.second);
+		mSceneManager.LoadMainMenu(mTextureHandler.mTilesetLocations.mUIBorderTileset.second);
 	}
 	else if (retry) {
-		mSceneManager.ReloadCurrentLevel(mTextureHandler.mBaseT_Offset, mAudioHandler.IntroMusic);
+		mSceneManager.ReloadCurrentLevel(mTextureHandler.mTilesetLocations.mBaseTileset.second, mAudioHandler.IntroMusic);
 	}
 
-	mSceneManager.mUIScenes.LoadPauseMenu(mTextureHandler.mUI_BordersT_Offset);
+	mSceneManager.mUIScenes.LoadPauseMenu(mTextureHandler.mTilesetLocations.mUIBorderTileset.second);
 }
 
 
@@ -271,38 +321,8 @@ void App::MainLoop() {
 	}
 }
 
-void App::UpdatePlayground() {
-
-
-}
-
 void App::Update() {
-
-	UpdatePlayground();
-
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-	// IT IS A MESS, I KNOW IT, I WILL REFACTOR IT.
-
-	static int count = 0;
-	static double bufffps = 0.0f;
-
-	static int fps1;
+	static int fps;
 	// delta time logic vvv
 	TimePoint2 = std::chrono::system_clock::now();
 	static auto lastTime = std::chrono::high_resolution_clock::now();
@@ -314,28 +334,13 @@ void App::Update() {
 	deltaTime = elapsedTime.count();
 	if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1) {
 		auto elapsedTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count();
-		auto fps = frameCount * 1000.0 / elapsedTime;
+		fps = frameCount * 1000.0 / elapsedTime;
 
-		fps1 = fps;
-
-		std::cout << "FPS: " << fps << std::endl;
-
-
-		if (testing) {
-			bufffps += fps;
-			count++;
-		}
+		//std::cout << "FPS: " << fps << std::endl;
 
 		frameCount = 0;
 		lastTime = currentTime;
 	}
-
-	if (count == 10 && testing) {
-		std::cout << "FRAMES ELAPSED: " <<  bufffps << ", AVG FPS: " << bufffps / 10.0f << ", TIME: " << count << std::endl;
-		testing = false;
-		count = 0;
-	}
-
 
 
 	static int o = 0;
@@ -350,8 +355,6 @@ void App::Update() {
 		o++;
 	}
 
-	//std::cout << "Total: " << levelTimeTotal << ", Level: " << levelTime << ", Pause: " << pauseTime << std::endl;
-
 	TimePoint1 = TimePoint2;
 	// delta time logic ^^^
 	if (mSceneManager.mMainMenuActive == true) {
@@ -364,10 +367,6 @@ void App::Update() {
 		mBackgroundRenderer.RenderLevelBackground(&mBackgroundShaderProgram, &mBackgroundFramebufferShaderProgram, mPipelineProgram.ID, mCamera.GetProjectionMatrix(), mBlackHole.AABBSize.x, mBlackHole.epicenterAABBPos +	mBlackHole.epicenterAABBSize / 2.0f, mCamera.mCameraPosition.x, gameStarted, deltaTime);
 	}
 
-	//std::cout << glm::to_string(mCamera.mCameraPosition) << std::endl;
-
-
-
 	if (mActor.mDead || mActor.mEscaped) {
 		if (mAudioHandler.mMusicFadeoutTimer > mAudioHandler.mMusicFadeoutTime && mAudioHandler.mInitialMusicVolume > 0) {
 			mAudioHandler.mInitialMusicVolume -= 1;
@@ -379,10 +378,6 @@ void App::Update() {
 		mAudioHandler.mMusicFadeoutTimer += deltaTime;
 		mAudioHandler.SetGlobalMusicVolume(mSettings.MusicVolume);
 	}
-
-
-
-
 
 	// game start logic
 	if (gameStarted == false && mActor.mVelocity.x != 0.0f) {
@@ -404,7 +399,7 @@ void App::Update() {
 				startMessageTimer = 0.0f;
 			}
 			if (startMessageTimer >= 1.0f) {
-				mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, "Move to start", mActor.mPosition.x + 100.0f, mActor.mPosition.y + 200.0f, 0.5f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mActor.mModelMatrix);
+				mTextRenderer.RenderText(&mTextShaderProgram, mPipelineProgram.ID, "Move to start", 900.0f, 500.0f, 0.5f, glm::vec3(0.80859375f, 0.80078125f, 0.81640625f), mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix);
 			}
 		}
 	}
@@ -428,11 +423,9 @@ void App::Update() {
 
 
 	// black hole update
-	if (gameStarted && !mPause) {
-		mBlackHole.Update(mSceneManager.mCurrentBlocks, mActor, deltaTime, mAnimationHandler.BlackHoleBirthAnimation, mAnimationHandler.BlackHoleLoopAnimation, mAudioHandler.BlackHoleBorn, mAudioHandler.ConsumedByVoid, mAudioHandler.BlackHoleIdle, mAudioHandler.mGlobalSFXVolumeModifier, testing);
+	if (gameStarted && !mPause && !mSettings.debugMode) {
+		mBlackHole.Update(mSceneManager.mCurrentBlocks, mActor, deltaTime, mAnimationHandler.BlackHoleBirthAnimation, mAnimationHandler.BlackHoleLoopAnimation, mAudioHandler.BlackHoleBorn, mAudioHandler.ConsumedByVoid, mAudioHandler.BlackHoleIdle, mAudioHandler.mGlobalSFXVolumeModifier, mStateMachine.mActorDeathCause);
 	}
-
-	//mBatchRenderer.DrawSeperatly(glm::vec2(0.0f, 0.0f), mBlackHole.AABBSize, glm::vec4(0.0f, 0.0f, 1.0f, 0.2f), mCamera.GetProjectionMatrix());
 
 	// dead logic
 	if (mActor.mPosition.y < -500.0f && !mActor.mDead) {
@@ -473,35 +466,48 @@ void App::Update() {
 	// screen position calculation
 	mActor.mScreenPosition = mCamera.GetProjectionMatrix() * glm::vec4(mActor.mPosition.x + mActor.mSprite.mVertexData.Size.x / 2, mActor.mPosition.y + mActor.mSprite.mVertexData.Size.y / 2, 0.0f, 1.0f);
 
-	//mBatchRenderer.DrawSeperatly(glm::vec2(0.0f, 0.0f), glm::vec2(5.0f, 1080.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), mCamera.GetProjectionMatrix());
-
 	// level render vvv
 
-	//std::cout << mSceneManager.mCurrentBlocks->size() << std::endl;
 	mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[512].first);
 
 	if (mSceneManager.mLevelActive == true) {
 		if (gameStarted) {
 			if (mBlackHole.mSprite.mVertexData.Position.x + mBlackHole.mSprite.mVertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 				&& mBlackHole.mSprite.mVertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f)) {
 				mBatchRenderer.DrawInBatch(mBlackHole.mSprite.mVertexData.Position, mBlackHole.mSprite.mVertexData.Size, mBlackHole.mSprite.mVertexData.TextureIndex, mAnimationHandler.BlackHoleLoopAnimation.Size, mBlackHole.mSprite.mVertexData.TexturePosition);
-				mBatchRenderer.DrawInBatch(mBlackHole.mSprite.mVertexData.Position, mBlackHole.mSprite.mVertexData.Size, mBlackHole.mSprite.mVertexData.TextureIndex, mAnimationHandler.BlackHoleLoopAnimation.Size, mBlackHole.mSprite.mVertexData.TexturePosition);
 			}
 		}
+
+		mBatchRenderer.EndBatch();
+		mBatchRenderer.Flush();
 
 		// buffer of block id that are being sucked into the black hole and visible
 		std::vector<int> flyingBlocks;
 
+		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[mTextureHandler.mTilesetLocations.mBaseTileset.first].first);
+
+
 		for (int i = 0; i < mSceneManager.mCurrentBlocks->size(); i++) {
 			if (mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position.x + mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 				&& mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f) && mSceneManager.mCurrentBlocks->at(i).mIsVisible == true && mSceneManager.mCurrentBlocks->at(i).mIsSucked == false) {
-				mBatchRenderer.DrawInBatch(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Size, static_cast<uint32_t>(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.TextureIndex), glm::vec2(0.25f, 0.25f));
+				mBatchRenderer.DrawInBatch(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Size, static_cast<uint32_t>(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.TextureIndex), glm::vec2(1.0f, 1.0f));
 			}
 			else if (mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position.x + mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 				&& mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f) && mSceneManager.mCurrentBlocks->at(i).mIsVisible == true && mSceneManager.mCurrentBlocks->at(i).mIsSucked == true) {
 				flyingBlocks.push_back(i);
 			}
 		}
+
+		mBatchRenderer.EndBatch();
+		mBatchRenderer.Flush();
+
+		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[512].first);
 		mEscapePortal.Update(mAnimationHandler.EscapePortalAnimation, deltaTime, mActor, mAudioHandler.PortalEscape, mAudioHandler.PortalIdle, mAudioHandler.mGlobalSFXVolumeModifier);
 		if (mEscapePortal.mSprite.mVertexData.Position.x + mEscapePortal.mSprite.mVertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 			&& mEscapePortal.mSprite.mVertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f)) {
@@ -512,16 +518,13 @@ void App::Update() {
 		mBatchRenderer.Flush();
 
 		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix());
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[mTextureHandler.mTilesetLocations.mBaseTileset.first].first);
 
 		for (int i = 0; i < flyingBlocks.size(); i++) {
 			if (mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.Position.x + mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.Size.x > (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x - 80.0f)
 				&& mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.Position.x < (mActor.mPosition.x - 800.0f + mCamera.mCameraOffset.x + 2000.0f)) {
-				//mBatchRenderer.DrawSeperatly(mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.Position, mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.Size, mCamera.GetProjectionMatrix(),
-				//	static_cast<uint32_t>(mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.TextureIndex), glm::vec2(0.25f, 0.25f), glm::vec2(0.0f, 0.0f), mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mModelMatrix, false);
-				mBatchRenderer.DrawInBatch(mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.Position, mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.Size, static_cast<uint32_t>(mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.TextureIndex), glm::vec2(0.25f, 0.25f), glm::vec2(0.0f, 0.0f), mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mFlyAngle, mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mFlyAngleOrientation);
-
-
-
+				mBatchRenderer.DrawInBatch(mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.Position, mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.Size, static_cast<uint32_t>(mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mSprite.mVertexData.TextureIndex), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 0.0f), mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mFlyAngle, mSceneManager.mCurrentBlocks->at(flyingBlocks[i]).mFlyAngleOrientation);
 			}
 		}
 
@@ -533,7 +536,7 @@ void App::Update() {
 			if (RectVsRect(glm::vec2(-10.0f, -10.0f), glm::vec2(2000.0f, 1160.0f), pair.second.mTriggerPos, pair.second.mTriggerSize)) {
 				// idk
 			}
-			mSceneManager.mUIScenes.mButtonMap[pair.first].Render(&mBatchRenderer, mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix);
+			mSceneManager.mUIScenes.mButtonMap[pair.first].Render(&mBatchRenderer, mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix, mTextureHandler.mTextureArrays[mTextureHandler.mTilesetLocations.mUIBorderTileset.first].first);
 		}
 		if (mSceneManager.mMainMenuActive == true) {
 			for (int i = 0; i < mSceneManager.mUIScenes.mTextToRender.size(); i++) {
@@ -544,11 +547,13 @@ void App::Update() {
 			}
 		}
 
-		mSceneManager.UpdateUIMenu(mTextureHandler.mBaseT_Offset, deltaTime, mWindowWidth, mWindowHeight, mQuit, mWindowModes, mResolutions, mWindow);
+		mSceneManager.UpdateUIMenu(mTextureHandler.mTilesetLocations.mBaseTileset.second, deltaTime, mWindowWidth, mWindowHeight, mQuit, mWindowModes, mResolutions, mWindow);
 
 		mBatchRenderer.BeginBatch(mCamera.GetProjectionMatrix(), &mCamera.mUIModelMatrix);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[mTextureHandler.mTilesetLocations.mUIBorderTileset.first].first);
 		for (int i = 0; i < mSceneManager.mCurrentBlocks->size(); i++) {
-			mBatchRenderer.DrawInBatch(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Size, static_cast<uint32_t>(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.TextureIndex), glm::vec2(0.03125f, 0.03125f), glm::vec2(0.0f, 0.0f), 0.0f, 1.0f, false, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Color);
+			mBatchRenderer.DrawInBatch(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Position, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Size, static_cast<uint32_t>(mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.TextureIndex), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 0.0f), 0.0f, 1.0f, false, mSceneManager.mCurrentBlocks->at(i).mSprite.mVertexData.Color);
 		}
 		mBatchRenderer.EndBatch();
 		mBatchRenderer.Flush();
@@ -556,14 +561,11 @@ void App::Update() {
 
 	// menu render ^^^
 
-	std::cout << glm::to_string(mActor.mVelocity) << std::endl;
-
 	// state machine update
 	if (mSceneManager.mLevelActive && !mPause) {
 		mStateMachine.Update(mMovementHandler, mAnimationHandler, mAudioHandler, mActor, deltaTime);
 	}
 
-	glm::vec2 adadaad = glm::vec2(mActor.mSprite.mVertexData.Position.x + (mStateMachine.mCurrentActorDrawSize.x / 2.0f) - (mActor.mDoubleJumpOrb.Size.x / 2.0f), mActor.mSprite.mVertexData.Position.y + mStateMachine.mCurrentActorDrawSize.y + 40.0f);
 
 	float angle = 0.0f;
 
@@ -578,57 +580,28 @@ void App::Update() {
 			angle = glm::radians(mActor.mVelocity.x / 250.0f);
 		}
 	}
-
-
-	// this is a LAG MACHINE, do no turn it on unless you want to get 10 fps
-	//glm::vec2 centr = glm::vec2(200.0f, 200.0f);
-	//float radius = 50.0f;
-	//const float pointSize = 1.0f;
-	//
-	//const float left = centr.x - radius;
-	//const float right = centr.x + radius;
-	//const float top = centr.y - radius;
-	//const float bottom = centr.y + radius;
-	//
-	//const float step = pointSize * 0.7f;
-	//
-	//const float radiusSq = radius * radius;
-	//
-	//for (float y = top; y <= bottom; y += step) {
-	//	for (float x = left; x <= right; x += step) {
-	//		// Calculate squared distance from center
-	//		const float dx = x - centr.x;
-	//		const float dy = y - centr.y;
-	//		const float distSq = dx * dx + dy * dy;
-	//
-	//		// Render if point is within the circle
-	//		if (distSq <= radiusSq) {
-	//			mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), glm::vec2(x, y), glm::vec2(pointSize, pointSize),
-	//				0, glm::vec2(0.1875f, 0.1875f), mActor.mDoubleJumpOrb.TexturePosition, 0.0f, 1.0f, false, &mActor.mModelMatrix, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f));
-	//		}
-	//	}
-	//}
-
+	mActor.mDoubleJumpOrb.Position = glm::vec2(mActor.mSprite.mVertexData.Position.x + (mStateMachine.mCurrentActorDrawSize.x / 2.0f) - (mActor.mDoubleJumpOrb.Size.x / 2.0f), mActor.mSprite.mVertexData.Position.y + mStateMachine.mCurrentActorDrawSize.y + 40.0f);
 
 	// actor render
 	if (mActor.mIsVisible == true && mSceneManager.mLevelActive == true) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, mTextureHandler.mTextureArrays[128].first);
 		mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), mActor.mSprite.mVertexData.Position, mStateMachine.mCurrentActorDrawSize,
 			mStateMachine.mCurrentActorTextureIndex, mStateMachine.mCurrentActorTextureSize, mStateMachine.mCurrentActorTexturePosition, angle, 1.0f, mStateMachine.mActorFlipped, &mActor.mModelMatrix);
 		if (!mActor.mDead) {
-			mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), adadaad, mActor.mDoubleJumpOrb.Size, 
-				mTextureHandler.mOrbT_Offset + 1, glm::vec2(0.1875f, 0.1875f), mActor.mDoubleJumpOrb.TexturePosition, 0.0f, 1.0f, false, &mActor.mModelMatrix);
+			mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), mActor.mDoubleJumpOrb.Position, mActor.mDoubleJumpOrb.Size,
+				mTextureHandler.mTilesetLocations.mDoubejumpOrbTileset.second + 1, glm::vec2(0.75f, 0.75f), mActor.mDoubleJumpOrb.TexturePosition, 0.0f, 1.0f, false, &mActor.mModelMatrix);
 			if (mMovementHandler.mCanDoubleJump) {
-				mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), adadaad, mActor.mDoubleJumpOrb.Size, 
-					mTextureHandler.mOrbT_Offset, glm::vec2(0.1875f, 0.1875f), mActor.mDoubleJumpOrb.TexturePosition, 0.0f, 1.0f, false, &mActor.mModelMatrix);
+				mBatchRenderer.DrawSeperatly(mCamera.GetProjectionMatrix(), mActor.mDoubleJumpOrb.Position, mActor.mDoubleJumpOrb.Size,
+					mTextureHandler.mTilesetLocations.mDoubejumpOrbTileset.second, glm::vec2(0.75f, 0.75f), mActor.mDoubleJumpOrb.TexturePosition, 0.0f, 1.0f, false, &mActor.mModelMatrix);
 			} 
 		}
-		//mBatchRenderer.Test();
 	}
 
 	bool restart = false;
 	bool restartMode = false;
 
-	mSceneManager.UpdateUIInGame(restart, restartMode, mActor.mDead, mActor.mEscaped, mPause, gameStarted, mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix, deltaTime, mStateMachine.mActorDeathCause, &mTextShaderProgram, mPipelineProgram.ID, fps1);
+	mSceneManager.UpdateUIInGame(restart, restartMode, mActor.mDead, mActor.mEscaped, mPause, gameStarted, mCamera.GetProjectionMatrix(), mCamera.mUIModelMatrix, deltaTime, mStateMachine.mActorDeathCause, &mTextShaderProgram, mPipelineProgram.ID, fps, mTextureHandler.mTextureArrays[mTextureHandler.mTilesetLocations.mUIBorderTileset.first].first);
 
 	if (restart) {
 		if (restartMode) {

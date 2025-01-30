@@ -81,10 +81,11 @@ void BatchRenderer::ShutDown() {
 	delete[] QuadBuffer;
 }
 
-void BatchRenderer::BeginBatch(const glm::mat4& ProjectionMatrix, const glm::mat4* modelMatrix) {
+void BatchRenderer::BeginBatch(const glm::mat4& ProjectionMatrix, const glm::mat4* modelMatrix, int slot) {
 	QuadBufferPtr = QuadBuffer;
 	currentProjectionMatrix = ProjectionMatrix;
 	currentModelMatrix = modelMatrix;
+	currentTextureSlot = slot;
 }
 
 void BatchRenderer::EndBatch() {
@@ -104,24 +105,28 @@ void BatchRenderer::DrawInBatch(const glm::vec2& position, const glm::vec2& size
 	QuadBufferPtr->Color = color;
 	QuadBufferPtr->TexturePosition = { 0.0f, 0.0f };
 	QuadBufferPtr->TextureIndex = 0;
+	QuadBufferPtr->RotationalAngle = 0;
 	QuadBufferPtr++;
 
 	QuadBufferPtr->Position = { position.x + size.x, position.y };
 	QuadBufferPtr->Color = color;
-	QuadBufferPtr->TexturePosition = { 0.25f, 0.0f };
+	QuadBufferPtr->TexturePosition = { 0.03125f, 0.0f };
 	QuadBufferPtr->TextureIndex = 0;
+	QuadBufferPtr->RotationalAngle = 0;
 	QuadBufferPtr++;
 
 	QuadBufferPtr->Position = { position.x + size.x, position.y + size.y};
 	QuadBufferPtr->Color = color;
-	QuadBufferPtr->TexturePosition = { 0.25f, 0.25f };
+	QuadBufferPtr->TexturePosition = { 0.03125f, 0.03125f };
 	QuadBufferPtr->TextureIndex = 0;
+	QuadBufferPtr->RotationalAngle = 0;
 	QuadBufferPtr++;
 
 	QuadBufferPtr->Position = { position.x, position.y + size.y };
 	QuadBufferPtr->Color = color;
-	QuadBufferPtr->TexturePosition = { 0.0f, 0.25f };
+	QuadBufferPtr->TexturePosition = { 0.0f, 0.03125f };
 	QuadBufferPtr->TextureIndex = 0;
+	QuadBufferPtr->RotationalAngle = 0;
 	QuadBufferPtr++;
 
 	indexCount += 6;
@@ -131,7 +136,7 @@ void BatchRenderer::DrawInBatch(const glm::vec2 position, const glm::vec2 size, 
 	if (indexCount >= maxIndexCount) {
 		EndBatch();
 		Flush();
-		BeginBatch(currentProjectionMatrix, currentModelMatrix);
+		BeginBatch(currentProjectionMatrix, currentModelMatrix, currentTextureSlot);
 	}
 
 	if (drawFliped == true) {
@@ -298,7 +303,7 @@ void BatchRenderer::Flush() {
 	else {
 		currentProgram->SetMat4("uModelMatrix", glm::mat4(1.0f));
 	}
-
+	currentProgram->SetInt("uTextures", currentTextureSlot);
 
 	glBindVertexArray(VAO);
 	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);

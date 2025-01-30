@@ -1,5 +1,4 @@
 #include <string>
-#include "GameLevel.hpp"
 #include "GameObject.hpp"
 #include "UIScenes.hpp"
 #include "LevelScene.hpp"
@@ -10,6 +9,7 @@
 #include <format>
 #include "StateMachine.hpp"
 #include "TextRenderer.hpp"
+#include "JsonFileManager.hpp"
 
 class SceneManager {
 public:
@@ -19,9 +19,7 @@ public:
 
 	void UpdateUIMenu(int tilesetOffset, float deltaTime, int& windowWidth, int& windowHeight, bool& quit, std::vector<std::string>& windowModes, std::vector<glm::ivec2>& resolutions, SDL_Window* window);
 
-	void UpdateUIInGame(bool& restart, bool& restartMode, const bool actorDead, const bool actorEscaped, bool& pause, const bool gameStarted, const glm::mat4& projectionMatrix, const glm::mat4& UImodelMatrix, float deltaTime, DeathCause actorDeathCause, ShaderProgram* textShader, GLuint pipelineID, int fps);
-
-	void ResetState();
+	void UpdateUIInGame(bool& restart, bool& restartMode, const bool actorDead, const bool actorEscaped, bool& pause, const bool gameStarted, const glm::mat4& projectionMatrix, const glm::mat4& UImodelMatrix, float deltaTime, DeathCause actorDeathCause, ShaderProgram* textShader, GLuint pipelineID, int fps, GLuint arrayTexture);
 
 	void ResetTimer();
 
@@ -29,15 +27,7 @@ public:
 
 	void Init(InputManager* INinputManager, BackgroundRenderer* INbackgroundRenderer, AudioHandler* INaudioHandler, Settings* INsettings, SaveData* INsaveData, BatchRenderer* INbatchRenderer, TextRenderer* INtextRenderer);
 
-	void LoadGameLevel(std::string levelPath, GameLevel* level, const int& tilesetOffset);
-
-	void LoadMenuLayout(std::string layoutPath);
-
 	void LoadMainMenu(const int& tilesetOffset);
-
-	void LoadTitleScreen();
-
-	void SceneChangeAnim(const float& deltaTime);
 
 	void ReloadCurrentLevel(const int tilesetOffset, Mix_Music* introMusic);
 
@@ -63,12 +53,6 @@ public:
 	std::vector<GameObject>* mCurrentBlocks;
 
 	std::vector<std::vector<std::vector<int>>> layoutData;
-
-	std::string mMainMenuLayoutPath{ "" };
-
-	bool mChangingScene{ false };
-
-	bool mCurtainDirection{ false };
 
 	bool mNewBestTimeMessageOneShot{ false };
 
@@ -101,4 +85,9 @@ private:
 	long long levelTimeTotal{ 0 };
 	long long levelTime{ 0 };
 	long long pauseTime{ 0 };
+
+	bool deathMessageOneShot{ true };
+
+	std::string deathMessageText;
+	glm::vec4 deathMessageColor = glm::vec4(1.0f);
 };

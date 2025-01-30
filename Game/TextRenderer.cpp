@@ -89,7 +89,7 @@ void TextRenderer::SetFontSize(const int& fontSize) {
 }
 
 void TextRenderer::RenderText(ShaderProgram* shader, GLuint& pipelineProgramID, std::string text, float x, float y, float scale, glm::vec3 color, glm::mat4 projectionMatrix, glm::mat4 modelMatrix, bool centeredX, bool centeredY, bool rightSided) {
-    // this implementation is not the most efficient, but its not a bottleneck and im too lazy to optimize it right now
+    // this implementation is not the most efficient, but since its not a bottleneck, there's no reason to optimize it right now. Will do it later
     
     // activate corresponding render state	
     float xtemp = x;

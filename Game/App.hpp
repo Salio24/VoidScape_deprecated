@@ -4,16 +4,13 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <sstream>
-#include "IO.hpp"
 #include "Input.hpp"
-#include "PipelineManager.hpp"
 #include "Sprite.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "Actor.hpp"
 #include "BatchRenderer.hpp"
 #include "HelperStructs.hpp"
-#include "GameLevel.hpp"
 #include "CollisionHandler.hpp"
 #include "MovementHandler.hpp"
 #include <vector>
@@ -33,6 +30,18 @@
 #include "LevelScene.hpp"
 #include "UIScenes.hpp"
 #include "BackgroundRenderer.hpp"
+#include "JsonFileManager.hpp"
+#include "glm/gtx/string_cast.hpp"
+#include <cmath>
+#include <algorithm>
+#include "Sign.hpp"
+#include <SDL3/SDL_image.h>
+#include <SDL3/SDL_mixer.h>
+#include <glm/gtx/norm.hpp>
+#include <random>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtx/exterior_product.hpp>
+#include <numbers>
 
 class App {
 public:
@@ -56,8 +65,6 @@ public:
 
 	AudioHandler mAudioHandler;
 
-	GameLevel mLevel;
-
 	EscapePortal mEscapePortal;
 
 	TextureHandler mTextureHandler;
@@ -69,8 +76,6 @@ public:
 	StateMachine mStateMachine;
 
 	Camera mCamera;
-
-	PipelineManager mPipelineManager;
 
 	ShaderProgram mGeneralShaderProgram;
 	ShaderProgram mTextShaderProgram;
@@ -85,6 +90,8 @@ public:
 
 	TextRenderer mTextRenderer;
 
+	JsonManager mJsonManager;
+
 	bool mQuit{ false };
 	bool mPause{ false };
 
@@ -98,8 +105,6 @@ public:
 	std::vector<std::string> mWindowModes;
 
 	std::vector<glm::ivec2> mResolutions;
-
-	bool testing{ false };
 
 private: 
 	App();
@@ -129,9 +134,6 @@ private:
 	float deltaTimeBuffer{ 0.0f };
 
 	float textSizeMultiplier    { 800.0f };
-
-	//float titleScreenMessageTime { 2.0f };
-	//float titleScreenMessageTimer{ 0.0f };
 
 	float startMessageTime { 2.0f };
 	float startMessageTimer{ 0.0f };

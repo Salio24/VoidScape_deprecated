@@ -17,6 +17,6 @@ bool RayVsRect(const glm::vec2& rayOrigin, const glm::vec2& rayDirection, const 
 
 bool DynamicRectVsRect(const Box& dynamicBox, const float deltaTime, const Box& staticBox, const glm::vec2& dynamicBoxVelocity, glm::vec2& contactPoint, glm::vec2& contactNormal, float& contactTime, glm::vec2& position);
 
-bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box& staticBox, glm::vec2& dynamicBoxVelocity, Actor& actor, glm::vec2& averagedNormal, bool& NormalGroundCheck, bool& isWallMountableL, bool& isWallMountableR, glm::vec2& norm);
+bool ResolveDynamicRectVsRect(Box& dynamicBox, const float deltaTime, const Box& staticBox, glm::vec2& dynamicBoxVelocity, Actor& actor, glm::vec2& averagedNormal, bool& NormalGroundCheck, bool& isWallMountableL, bool& isWallMountableR, float& Ynormal);
 
 void CollisionUpdate(const std::vector<GameObject>* blocks, Actor& actor, bool& LeftWallHug, bool& RightWallHug, const float& deltaTime, bool& isGrounded, bool& isWallMountableL, bool& isWallMountableR);

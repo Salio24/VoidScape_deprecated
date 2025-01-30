@@ -26,11 +26,8 @@ public:
 	glm::vec2 mCameraPosition{ 0.0f, 0.0f };
 
 private:
-	glm::vec2 mousePossition;
-
 	glm::mat4 projectionMatrix;
 	glm::mat4 initialProjectionMatrix;
-
 
 	float cameraOffsetTimerBuffer{ 0.0f };
 	float cameraOffsetTimeBuffer{ 0.5f };
